@@ -34,8 +34,8 @@ dedicated production database and never run test fixtures against it.
 ## 2. Create the tables and card data from this computer
 
 Install the backend dependencies locally as described in [the backend guide](../backend/README.md).
-In PowerShell from the repository root, enter the URL when prompted (the
-answer is not printed or stored in Git):
+In PowerShell from the repository root, enter the URL when prompted (the URL
+is not placed in the command line or stored in Git; keep the terminal private):
 
 ```powershell
 $env:DATABASE_URL = Read-Host 'TiDB SQLAlchemy DATABASE_URL'
