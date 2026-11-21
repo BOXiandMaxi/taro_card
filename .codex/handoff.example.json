@@ -1,0 +1,10 @@
+{
+  "kind": "ui",
+  "task": "ปรับ spacing และ responsive ของหน้าที่ระบุ โดยรักษา business logic เดิม",
+  "context": "Codex ต้องแทนข้อมูลตัวอย่างนี้ด้วย flow, API, fields และข้อจำกัดที่ตรวจจากโปรเจกต์จริงแล้ว",
+  "constraints": ["รักษา PHP/JavaScript, API response, event handlers, IDs และชื่อ form fields เดิม"],
+  "files": [
+    {"path": "assets/css/page.css", "start": 1, "end": 80, "editable": true},
+    {"path": "pages/page.php", "start": 1, "end": 60, "editable": false}
+  ]
+}

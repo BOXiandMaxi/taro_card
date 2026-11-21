@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 348 540">
+  <rect width="348" height="540" rx="18" fill="#171a35"/>
+  <rect x="10" y="10" width="328" height="520" rx="11" fill="none" stroke="#c3a365" stroke-width="2"/>
+  <rect x="20" y="20" width="308" height="500" rx="6" fill="none" stroke="#c3a365" stroke-width="1"/>
+  <g fill="none" stroke="#c3a365" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M34 72V34h38M276 34h38v38M34 468v38h38M276 506h38v-38" stroke-width="2"/>
+    <circle cx="174" cy="270" r="96" stroke-width="1.5"/>
+    <circle cx="174" cy="270" r="83" stroke-width="1"/>
+    <path d="M174 184v-22m0 216v-22M88 270H66m216 0h-22M113 209l-15-15m152 152-15-15m0-122 15-15M98 346l15-15"/>
+    <path d="M185 218a55 55 0 1 0 0 104 49 49 0 1 1 0-104Z" fill="#c3a365" stroke="none"/>
+    <path d="M174 58v42m-21-21h42M174 440v42m-21-21h42M55 249v42m-21-21h42m217-21v42m-21-21h42"/>
+    <path d="M174 113l5 12 12 5-12 5-5 12-5-12-12-5 12-5Zm0 280 5 12 12 5-12 5-5 12-5-12-12-5 12-5ZM69 126l3 8 8 3-8 3-3 8-3-8-8-3 8-3Zm210 0 3 8 8 3-8 3-3 8-3-8-8-3 8-3ZM69 392l3 8 8 3-8 3-3 8-3-8-8-3 8-3Zm210 0 3 8 8 3-8 3-3 8-3-8-8-3 8-3Z" fill="#c3a365" stroke="none"/>
+    <g fill="#c3a365" stroke="none"><circle cx="106" cy="105" r="2"/><circle cx="242" cy="105" r="2"/><circle cx="106" cy="435" r="2"/><circle cx="242" cy="435" r="2"/><circle cx="54" cy="193" r="2"/><circle cx="294" cy="193" r="2"/><circle cx="54" cy="347" r="2"/><circle cx="294" cy="347" r="2"/></g>
+  </g>
+</svg>

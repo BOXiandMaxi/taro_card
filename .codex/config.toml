@@ -1,0 +1,6 @@
+# Codex 0.162.0-alpha.2: standalone agents are discovered in .codex/agents/.
+# Keep the parent model, reasoning, provider, authentication, and approvals inherited.
+[agents]
+enabled = true
+# Dependent work runs sequentially; this only caps independent parallel work.
+max_concurrent_threads_per_session = 2

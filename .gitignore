@@ -1,0 +1,31 @@
+# Local agent output
+.agent-handoff/
+.agent-work/
+
+# Private configuration and credentials
+.env
+.env.*
+!.env.example
+!**/.env.example
+*.pem
+*.p12
+*.key
+
+# Dependencies and generated output
+**/.venv/
+**/node_modules/
+**/dist/
+**/build/
+**/__pycache__/
+**/.pytest_cache/
+*.py[cod]
+*.log
+*.sqlite
+*.sqlite3
+*.db
+
+# Editor and operating system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
