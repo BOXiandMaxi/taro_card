@@ -1,6 +1,7 @@
 # Deployment preparation and release gates
 
 Audit date: 2026-11-20. The application has not been deployed to an external host.
+For the selected Render route, follow [the Render deployment guide](render-deployment.md).
 Use a dedicated MySQL/MariaDB database and a separate empty `tarot_reading_test`
 database for integration tests. Never point test credentials at the main database.
 

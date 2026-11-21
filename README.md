@@ -22,7 +22,7 @@ Prerequisites: Python 3.11+, Node.js compatible with Vite 6, and MySQL 8 or the 
 5. From `backend/`, start the API with `.venv/Scripts/python.exe -m uvicorn app.main:app --reload`. FastAPI documentation is at `/docs` and liveness at `/api/health`.
 6. In `frontend/`, run `npm ci` and `npm run dev`. The public API path defaults to `/api`; see [frontend/.env.example](frontend/.env.example). On Windows PowerShell with script execution disabled, use `npm.cmd`.
 
-See [API contract](docs/api.md), [database design](docs/database.md), [tarot rules](docs/tarot-rules.md), and [deployment guide](docs/deployment.md). AI interpretation has a validated provider adapter but is disabled by default until provider credentials are configured; database meanings provide the fallback.
+See [API contract](docs/api.md), [database design](docs/database.md), [tarot rules](docs/tarot-rules.md), and [Render deployment steps](docs/render-deployment.md). AI interpretation has a validated provider adapter but is disabled by default until provider credentials are configured; database meanings provide the fallback.
 
 ## Tests
 
