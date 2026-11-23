@@ -55,28 +55,204 @@ function readSession(key, fallback) { try { return JSON.parse(sessionStorage.get
 function draftSignature(draft) { return `${draft.category?.id}:${draft.question?.id}:${draft.spread?.id}` }
 function pendingFor(draft) { const saved = readSession(PENDING_KEY, null); return saved?.signature === draftSignature(draft) ? saved : null }
 function savePending(value) { sessionStorage.setItem(PENDING_KEY, JSON.stringify(value)) }
-function Shuffle() {
-  const { draft } = useContext(Draft); const { user } = useContext(Auth); const [shuffling, setShuffling] = useState(false); const [busy, setBusy] = useState(false); const [error, setError] = useState(''); const reduced = useReducedMotion(); const navigate = useNavigate()
-  if (!draft.spread || !draft.question || !draft.category) return <Missing />
-  async function complete() {
-    setBusy(true); setError('')
-    try {
-      let pending = pendingFor(draft)
-      if (!pending) { pending = { signature: draftSignature(draft), key: crypto.randomUUID(), selected: [] }; savePending(pending) }
-      if (!pending.id) { const reading = await createReading({ category_id: draft.category.id, question_id: draft.question.id, spread_id: draft.spread.id }, pending.key); if (!reading?.id) throw new Error('invalid reading'); pending.id = reading.id; savePending(pending) }
-      if (!user) rememberGuestReading(pending.id)
-      navigate('/pick')
-    } catch { setError('เตรียมสำรับไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง') } finally { setBusy(false) }
+const DECK_SIZE = 78
+const DEAL_DURATION_MS = 600
+const DEAL_STAGGER_MS = 5
+const WHEEL_POSITIONS = Array.from({ length: DECK_SIZE }, (_, index) => {
+  const ring = index < 39 ? 0 : index < 65 ? 1 : 2
+  const angle = (index - [0, 39, 65][ring]) * 360 / [39, 26, 13][ring]
+  const radius = [44, 31, 18][ring]
+  const x = radius * Math.sin(angle * Math.PI / 180)
+  const y = -radius * Math.cos(angle * Math.PI / 180)
+  return {
+    left: `${50 + x}%`, top: `${50 + y}%`, '--card-angle': `${angle}deg`,
+    '--deal-from-x': `${-x}cqw`, '--deal-from-y': `${-y}cqw`,
+    '--deal-delay': `${index * DEAL_STAGGER_MS}ms`, '--deal-duration': `${DEAL_DURATION_MS}ms`,
   }
-  return <Page kicker="04 / SHUFFLE" title="สับไพ่และตั้งสมาธิ" lead="นึกถึงคำถามของคุณ แล้วสับไพ่เมื่อพร้อม" back="/spreads"><div className="shuffle-panel"><p className="reading-question">{draft.question.prompt_th}</p><div className={`shuffle-deck ${shuffling && !reduced ? 'is-shuffling' : ''}`} aria-hidden="true"><img src={BACK} alt="" /><img src={BACK} alt="" /><img src={BACK} alt="" /></div><div className="button-row"><button className="button button-outline" onClick={() => setShuffling(s => !s)}>{shuffling ? 'หยุดสับไพ่' : 'สับไพ่'} <RefreshCw size={16} /></button><button className="button button-gold" disabled={busy} onClick={complete}>{busy ? 'กำลังเตรียมสำรับ…' : 'สับไพ่เสร็จแล้ว'} <ArrowRight size={16} /></button></div>{error && <p className="error-message" role="alert">{error}</p>}<p className="small-note">ระบบจะเตรียมสำรับสำหรับการเลือกไพ่ของคุณ</p></div></Page>
+})
+
+function DeckSelection() {
+  const { draft } = useContext(Draft)
+  if (!draft.spread || !draft.question || !draft.category) return <Missing />
+  return <DeckTable key={draftSignature(draft)} draft={draft} />
 }
-function Pick() {
-  const { draft } = useContext(Draft); const pending = pendingFor(draft); const [selected, setSelected] = useState(() => pending?.selected || []); const [locked, setLocked] = useState(() => !!pending?.submitted); const [error, setError] = useState(''); const [busy, setBusy] = useState(false); const navigate = useNavigate()
-  if (!draft.spread || !pending?.id) return <Missing />
+
+function DeckTable({ draft }) {
+  const { user } = useContext(Auth)
+  const [pending, setPending] = useState(() => pendingFor(draft))
+  const [phase, setPhase] = useState(() => pending?.id ? 'selecting' : 'stacked')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const requestInFlight = useRef(false)
+  const mounted = useRef(false)
+  const focusAfterDeal = useRef(false)
+  const selectionHeading = useRef(null)
+  const reduced = useReducedMotion()
+  const navigate = useNavigate()
+  const { pathname } = useLocation()
   const count = draft.spread.card_count
-  function toggle(index) { setError(''); if (busy || locked) return; if (!selected.includes(index) && selected.length >= count) { setError(`เลือกได้ไม่เกิน ${count} ใบ`); return } const next = selected.includes(index) ? selected.filter(x => x !== index) : [...selected, index]; setSelected(next); savePending({ ...pending, selected: next }) }
-  async function confirm() { if (selected.length !== count) { setError(`กรุณาเลือกไพ่ให้ครบ ${count} ใบ`); return } setBusy(true); setError(''); setLocked(true); savePending({ ...pending, selected, submitted: true }); try { await drawReading(pending.id, selected); navigate(`/reveal/${encodeURIComponent(pending.id)}`) } catch { setError('ยังบันทึกไพ่ไม่ได้ กรุณาลองอีกครั้งด้วยไพ่ชุดเดิม') } finally { setBusy(false) } }
-  return <Page kicker="05 / PICK YOUR CARDS" title="เลือกไพ่ที่ดึงดูดใจ" lead={`เลือกไพ่ให้ครบ ${count} ใบ แตะไพ่ที่เลือกอีกครั้งเพื่อยกเลิก`} back="/shuffle"><div className="pick-heading"><p aria-live="polite">เลือกแล้ว <strong>{selected.length} / {count}</strong> ใบ</p><p>ไพ่ทั้งหมด 78 ใบ</p></div><div className="wheel-wrap"><div className="card-wheel" role="group" aria-label="วงไพ่ 78 ใบ">{Array.from({ length: 78 }, (_, i) => { const ring = i < 39 ? 0 : i < 65 ? 1 : 2; const offset = [0, 39, 65][ring]; const angle = (i - offset) * 360 / [39, 26, 13][ring]; const radius = [44, 31, 18][ring]; return <button key={i} type="button" disabled={busy || locked} className={`wheel-card ${selected.includes(i) ? 'selected' : ''}`} style={{left: `${50 + radius * Math.sin(angle * Math.PI / 180)}%`, top: `${50 - radius * Math.cos(angle * Math.PI / 180)}%`, '--card-angle': `${angle}deg`}} title={`ไพ่ใบที่ ${i + 1}`} aria-label={`ไพ่ใบที่ ${i + 1}${selected.includes(i) ? ` เลือกลำดับที่ ${selected.indexOf(i) + 1}` : ''}`} aria-pressed={selected.includes(i)} onClick={() => toggle(i)}><img src={BACK} alt="" />{selected.includes(i) && <span>{selected.indexOf(i) + 1}</span>}</button> })}<div className="wheel-center" aria-hidden="true">✦</div></div></div><details className="number-picker" open><summary>เลือกไพ่ด้วยหมายเลข</summary><p>เริ่มที่ด้านบนของวงแล้วนับตามเข็มนาฬิกา: วงนอก 1–39 วงกลาง 40–65 วงใน 66–78</p><div className="number-grid" role="group" aria-label="เลือกไพ่ด้วยหมายเลข">{Array.from({ length: 78 }, (_, i) => <button key={i} type="button" disabled={busy || locked} className={selected.includes(i) ? 'selected' : ''} aria-label={`ไพ่ใบที่ ${i + 1}`} aria-pressed={selected.includes(i)} onClick={() => toggle(i)}>{i + 1}</button>)}</div></details><div className="pick-actions"><p className="pick-actions-count" aria-hidden="true"><strong>{selected.length} / {count}</strong></p><p className="small-note">{locked ? 'กำลังรอยืนยันไพ่ชุดเดิม หากการเชื่อมต่อขัดข้องให้กดยืนยันอีกครั้ง' : selected.length ? `ลำดับที่เลือก: ${selected.map(i => i + 1).join(', ')}` : 'แตะไพ่ในวง หรือเลือกจากปุ่มหมายเลข'}</p>{error && <p className="error-message" role="alert">{error}</p>}<button className="button button-gold next-action" disabled={busy} onClick={confirm}>{busy ? 'กำลังบันทึก…' : 'ยืนยันการเลือก'} <ArrowRight size={16} /></button></div></Page>
+  const selected = pending?.selected || []
+  const locked = !!pending?.submitted
+  const selecting = phase === 'selecting'
+  const dealing = phase === 'dealing'
+  const preparing = phase === 'preparing'
+
+  useEffect(() => {
+    mounted.current = true
+    return () => { mounted.current = false }
+  }, [])
+
+  useEffect(() => {
+    if (!dealing) return
+    if (reduced) {
+      setPhase('selecting')
+      return
+    }
+    // Allow the last card to reach its position before enabling the picker.
+    const timer = setTimeout(() => setPhase('selecting'), DEAL_DURATION_MS + (DECK_SIZE - 1) * DEAL_STAGGER_MS + 50)
+    return () => clearTimeout(timer)
+  }, [dealing, reduced])
+
+  useEffect(() => {
+    if (selecting && focusAfterDeal.current) {
+      selectionHeading.current?.focus({ preventScroll: true })
+      focusAfterDeal.current = false
+    }
+  }, [selecting])
+
+  function isCurrent(key) {
+    return mounted.current && window.location.pathname === pathname && pendingFor(draft)?.key === key
+  }
+
+  async function prepare() {
+    if (phase !== 'shuffling' || requestInFlight.current) return
+    requestInFlight.current = true
+    setPhase('preparing')
+    setError('')
+    let current = pendingFor(draft)
+    try {
+      if (!current) {
+        current = { signature: draftSignature(draft), key: crypto.randomUUID(), selected: [] }
+        savePending(current)
+      }
+      if (!current.id) {
+        const reading = await createReading({ category_id: draft.category.id, question_id: draft.question.id, spread_id: draft.spread.id }, current.key)
+        if (!reading?.id) throw new Error('Invalid reading')
+        if (!isCurrent(current.key)) return
+        current = { ...current, id: reading.id }
+        savePending(current)
+      }
+      if (!user) rememberGuestReading(current.id)
+      setPending(current)
+      focusAfterDeal.current = true
+      setPhase(reduced ? 'selecting' : 'dealing')
+    } catch {
+      if (mounted.current && window.location.pathname === pathname) {
+        setError('เตรียมสำรับไม่สำเร็จ กรุณาลองอีกครั้ง')
+        setPhase('shuffling')
+      }
+    } finally { requestInFlight.current = false }
+  }
+
+  function toggle(index) {
+    if (!selecting || requestInFlight.current) return
+    const current = pendingFor(draft)
+    if (!current?.id || current.submitted) return
+    const indices = current.selected || []
+    if (!indices.includes(index) && indices.length >= count) {
+      setError(`เลือกได้ไม่เกิน ${count} ใบ`)
+      return
+    }
+    const next = { ...current, selected: indices.includes(index) ? indices.filter(x => x !== index) : [...indices, index] }
+    savePending(next)
+    setPending(next)
+    setError('')
+  }
+
+  async function confirm() {
+    if (!selecting || requestInFlight.current) return
+    const current = pendingFor(draft)
+    if (!current?.id) return
+    const indices = current.selected || []
+    if (indices.length !== count) {
+      setError(`กรุณาเลือกไพ่ให้ครบ ${count} ใบ`)
+      return
+    }
+    requestInFlight.current = true
+    setSaving(true)
+    setError('')
+    try {
+      const submitted = { ...current, submitted: true }
+      savePending(submitted)
+      setPending(submitted)
+      await drawReading(current.id, indices)
+      if (isCurrent(current.key)) navigate(`/reveal/${encodeURIComponent(current.id)}`)
+    } catch {
+      if (isCurrent(current.key)) setError('ยังบันทึกไพ่ไม่ได้ กรุณาลองอีกครั้งด้วยไพ่ชุดเดิม')
+    } finally {
+      requestInFlight.current = false
+      if (mounted.current) setSaving(false)
+    }
+  }
+
+  return <Page kicker="04 / SHUFFLE & PICK" title="สับไพ่และเลือกไพ่" lead={draft.question.prompt_th} back="/spreads">
+    <div className="deck-selection" data-phase={phase}>
+      <div className="deck-status" role="status">
+        {phase === 'stacked' && 'นึกถึงคำถามของคุณ แล้วกดสับไพ่เมื่อพร้อม'}
+        {phase === 'shuffling' && 'กำลังสับไพ่ กดเสร็จแล้วเมื่อพร้อมเลือก'}
+        {preparing && 'กำลังเตรียมสำรับ…'}
+        {dealing && 'กำลังจ่ายไพ่…'}
+        {selecting && <p ref={selectionHeading} tabIndex={-1}>เลือกแล้ว <strong>{selected.length} / {count}</strong> ใบ</p>}
+      </div>
+      <div className="deck-stage">
+        {!selecting && !dealing && <div className={`deck-stack shuffle-deck ${!reduced && phase === 'shuffling' ? 'is-shuffling' : ''}`} aria-hidden="true">
+          <img src={BACK} alt="" /><img src={BACK} alt="" /><img src={BACK} alt="" />
+        </div>}
+        {(selecting || dealing) && <div className="wheel-wrap">
+          <div className="card-wheel" role="group" aria-label="วงไพ่ 78 ใบ" aria-hidden={dealing || undefined}>
+            {WHEEL_POSITIONS.map((position, index) => {
+              const order = selected.indexOf(index) + 1
+              return <button key={index} type="button" disabled={dealing || saving || locked}
+                className={`wheel-card ${order ? 'selected' : ''}`} style={position}
+                title={`ไพ่ใบที่ ${index + 1}`} aria-label={`ไพ่ใบที่ ${index + 1}${order ? ` เลือกลำดับที่ ${order}` : ''}`}
+                aria-pressed={!!order} onClick={() => toggle(index)}>
+                <img src={BACK} alt="" />{order > 0 && <span>{order}</span>}
+              </button>
+            })}
+            <div className="wheel-center" aria-hidden="true">✦</div>
+          </div>
+        </div>}
+      </div>
+      {!selecting && <div className="deck-actions button-row">
+        {!dealing && <button type="button" className="button button-gold" aria-disabled={preparing}
+          onClick={phase === 'stacked' ? () => setPhase('shuffling') : prepare}>
+          {phase === 'stacked' ? <>สับไพ่ <RefreshCw size={16} aria-hidden="true" /></> : <>
+            {preparing ? 'กำลังเตรียมสำรับ…' : 'สับไพ่เสร็จแล้ว'} <ArrowRight size={16} aria-hidden="true" />
+          </>}
+        </button>}
+        {error && <p className="error-message" role="alert">{error}</p>}
+      </div>}
+      {selecting && <>
+        <details className="number-picker" open>
+          <summary>เลือกไพ่ด้วยหมายเลข</summary>
+          <p>เริ่มที่ด้านบนของวงแล้วนับตามเข็มนาฬิกา: วงนอก 1–39 วงกลาง 40–65 วงใน 66–78</p>
+          <div className="number-grid" role="group" aria-label="เลือกไพ่ด้วยหมายเลข">
+            {WHEEL_POSITIONS.map((_, index) => <button key={index} type="button" disabled={saving || locked}
+              className={selected.includes(index) ? 'selected' : ''} aria-label={`ไพ่ใบที่ ${index + 1}`}
+              aria-pressed={selected.includes(index)} onClick={() => toggle(index)}>{index + 1}</button>)}
+          </div>
+        </details>
+        <div className="pick-actions">
+          <p className="pick-actions-count" aria-hidden="true"><strong>{selected.length} / {count}</strong></p>
+          <p className="small-note">{locked ? 'หากการเชื่อมต่อขัดข้อง ให้กดยืนยันอีกครั้งด้วยไพ่ชุดเดิม' : selected.length ? `ลำดับที่เลือก: ${selected.map(i => i + 1).join(', ')}` : 'แตะไพ่ในวง หรือเลือกจากปุ่มหมายเลข'}</p>
+          {error && <p className="error-message" role="alert">{error}</p>}
+          <button type="button" className="button button-gold next-action" disabled={saving} onClick={confirm}>
+            {saving ? 'กำลังบันทึก…' : 'ยืนยันการเลือก'} <ArrowRight size={16} aria-hidden="true" />
+          </button>
+        </div>
+      </>}
+    </div>
+  </Page>
 }
 // The reading renderer accepts only persisted cards in the documented frontend integration shape.
 function ReadingPage({ result = false }) {
@@ -270,6 +446,6 @@ function App() {
   useEffect(() => { let active = true; getCurrentUser().then(user => { if (active) setIdentity(user) }).catch(error => { if (!active) return; if (error.response?.status === 401) setIdentity(null); else setAuth({ loading: false, user: null, error: true }) }); return () => { active = false } }, [authAttempt])
   useEffect(() => { if (!auth.loading && !auth.error) sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft)) }, [draft, auth.loading, auth.error])
   if (auth.loading || auth.error) return <main className="container"><div className="empty-state" role={auth.error ? 'alert' : 'status'}>{auth.error ? <><p>ตรวจสอบบัญชีไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่อ</p><button className="button button-outline" onClick={() => { setAuth({ loading: true, user: null, error: false }); setAuthAttempt(n => n + 1) }}>ลองอีกครั้ง</button></> : 'กำลังตรวจสอบบัญชี…'}</div></main>
-  return <Auth.Provider value={{user: auth.user, setIdentity}}><Draft.Provider value={{draft, setDraft}}><a className="skip-link" href="#main">ข้ามไปยังเนื้อหา</a><Header /><main id="main" tabIndex="-1"><AnimatePresence mode="wait"><motion.div key={location.pathname} initial={reduced ? false : {opacity: 0, y: 6}} animate={{opacity: 1, y: 0}} exit={reduced ? {} : {opacity: 0}} transition={{duration: .18}}><Routes location={location}><Route path="/" element={<Home />} /><Route path="/categories" element={<Categories />} /><Route path="/questions" element={<Questions />} /><Route path="/spreads" element={<Spreads />} /><Route path="/shuffle" element={<Shuffle />} /><Route path="/pick" element={<Pick />} /><Route path="/reveal/:id" element={<ReadingPage />} /><Route path="/result/:id" element={<ReadingPage result />} /><Route path="/history" element={<History />} /><Route path="/login" element={<AuthForm key="login" mode="login" />} /><Route path="/register" element={<AuthForm key="register" mode="register" />} /><Route path="/account" element={<Account />} /><Route path="/privacy" element={<Privacy />} /><Route path="*" element={<Page kicker="PAGE NOT FOUND" title="ไม่พบหน้าที่คุณกำลังมองหา"><Link className="button button-outline" to="/">กลับหน้าแรก</Link></Page>} /></Routes></motion.div></AnimatePresence></main><footer><div className="container footer-inner"><span><MoonStar size={17} aria-hidden="true" /> ไพ่ทาโรต์</span><p>พื้นที่สำหรับการทบทวนตัวเอง · <Link to="/privacy">ข้อมูลส่วนบุคคล</Link></p></div></footer></Draft.Provider></Auth.Provider>
+  return <Auth.Provider value={{user: auth.user, setIdentity}}><Draft.Provider value={{draft, setDraft}}><a className="skip-link" href="#main">ข้ามไปยังเนื้อหา</a><Header /><main id="main" tabIndex="-1"><AnimatePresence mode="wait"><motion.div key={location.pathname} initial={reduced ? false : {opacity: 0, y: 6}} animate={{opacity: 1, y: 0}} exit={reduced ? {} : {opacity: 0}} transition={{duration: .18}}><Routes location={location}><Route path="/" element={<Home />} /><Route path="/categories" element={<Categories />} /><Route path="/questions" element={<Questions />} /><Route path="/spreads" element={<Spreads />} /><Route path="/shuffle" element={<DeckSelection />} /><Route path="/pick" element={<Navigate to="/shuffle" replace />} /><Route path="/reveal/:id" element={<ReadingPage />} /><Route path="/result/:id" element={<ReadingPage result />} /><Route path="/history" element={<History />} /><Route path="/login" element={<AuthForm key="login" mode="login" />} /><Route path="/register" element={<AuthForm key="register" mode="register" />} /><Route path="/account" element={<Account />} /><Route path="/privacy" element={<Privacy />} /><Route path="*" element={<Page kicker="PAGE NOT FOUND" title="ไม่พบหน้าที่คุณกำลังมองหา"><Link className="button button-outline" to="/">กลับหน้าแรก</Link></Page>} /></Routes></motion.div></AnimatePresence></main><footer><div className="container footer-inner"><span><MoonStar size={17} aria-hidden="true" /> ไพ่ทาโรต์</span><p>พื้นที่สำหรับการทบทวนตัวเอง · <Link to="/privacy">ข้อมูลส่วนบุคคล</Link></p></div></footer></Draft.Provider></Auth.Provider>
 }
 createRoot(document.getElementById('root')).render(<React.StrictMode><BrowserRouter><App /></BrowserRouter></React.StrictMode>)
