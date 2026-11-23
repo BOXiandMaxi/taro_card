@@ -340,9 +340,10 @@ def test_fallback_uses_saved_questions_with_the_same_career_draw(client, monkeyp
     monkeypatch.setattr(readings, "_shuffled_deck", lambda _: list(range(1, 79)))
     monkeypatch.setattr(readings.get_settings(), "reversed_cards_enabled", False)
     results = []
-    for question, expected_action in (
-        ({"question_id": 20}, "เทียบงานปัจจุบันกับงานที่สนใจ"),
-        ({"custom_question": "  ฉันควรพัฒนาทักษะอะไรเพื่อเติบโตในสายงาน  "}, "เลือกทักษะที่อยากพัฒนา"),
+    for question, answer_topic, action_topic in (
+        ({"question_id": 20}, "งานใหม่แก้ปัญหา", "เทียบงานปัจจุบันกับงานที่สนใจ"),
+        ({"custom_question": "  ฉันควรพัฒนาทักษะอะไรเพื่อเติบโตในสายงาน  "}, "ทักษะที่ได้ใช้กับงานจริง", "เลือกทักษะ"),
+        ({"custom_question": "ควรเริ่มสมัครงานใหม่เมื่อไหร่?"}, "เริ่มสมัครได้", "วันปิดรับสมัคร"),
     ):
         reading = create(client, {"category_id": 4, "spread_id": 1, **question}).json()
         path = f"{ROOT}/{reading['id']}"
@@ -350,27 +351,70 @@ def test_fallback_uses_saved_questions_with_the_same_career_draw(client, monkeyp
         response = client.post(f"{path}/interpret")
         assert response.is_success, response.text
         result = response.json()
-        saved_question = QUESTIONS[19]["prompt_th"] if "question_id" in question else question["custom_question"].strip()
-        assert f"«{saved_question}»" in result["overall_summary"]
-        assert f"«{saved_question}»" in result["card_interpretations"][0]["interpretation"]
-        assert all(f"«{saved_question}»" not in entry["interpretation"] for entry in result["card_interpretations"][1:])
-        assert expected_action in result["practical_guidance"][0]
+        assert answer_topic in result["overall_summary"]
+        assert action_topic in result["practical_guidance"][0]
         results.append(result)
-    assert results[0]["card_interpretations"][0]["interpretation"] != results[1]["card_interpretations"][0]["interpretation"]
-    assert results[0]["overall_summary"] != results[1]["overall_summary"]
-    for first, second in zip(results[0]["card_interpretations"], results[1]["card_interpretations"], strict=True):
-        assert all(first[key] == second[key] for key in ("card_id", "position", "position_name", "orientation"))
-    assert results[0]["card_connections"] == results[1]["card_connections"]
-    assert results[0]["practical_guidance"] != results[1]["practical_guidance"]
+    assert len({result["overall_summary"] for result in results}) == len(results)
+    assert len({tuple(result["practical_guidance"]) for result in results}) == len(results)
+    assert all(result["card_interpretations"] == results[0]["card_interpretations"] for result in results)
+    assert all(result["card_connections"] == results[0]["card_connections"] for result in results)
 
 
-@pytest.mark.parametrize(("spread", "roles"), [
-    (1, ("สถานการณ์", "ติดขัด", "แนวทาง")),
-    (2, ("รากฐาน", "ทรัพยากร", "แนวทาง")),
-    (3, ("อิทธิพลที่เข้ามาขวาง", "เป้าหมาย", "รากฐาน", "อดีต", "ระยะใกล้",
-         "มุมมองต่อตัวเอง", "ปัจจัยรอบตัว", "ความหวังหรือความกลัว", "ทิศทาง")),
-])
-def test_fallback_connects_each_spread_and_uses_selected_orientation(client, monkeypatch, spread, roles):
+def test_fallback_answers_job_timing_for_the_five_card_example(client, monkeypatch):
+    monkeypatch.setattr(readings, "get_provider", lambda _: None)
+    draw = [66, 5, 64, 38, 16]
+    deck = draw + [card_id for card_id in range(1, 79) if card_id not in draw]
+    monkeypatch.setattr(readings, "_shuffled_deck", lambda _: deck)
+    monkeypatch.setattr(readings.get_settings(), "reversed_cards_enabled", False)
+    reading = create(client, {"category_id": 4, "spread_id": 2, "question_id": 32}).json()
+    path = f"{ROOT}/{reading['id']}"
+    draw_and_reveal(client, path, 5)
+
+    response = client.post(f"{path}/interpret")
+    assert response.is_success, response.text
+    result = response.json()
+    assert [entry["card_id"] for entry in result["card_interpretations"]] == draw
+    assert "แน่นอนไม่ได้" in result["overall_summary"] and "สัมภาษณ์" in result["overall_summary"]
+    assert "สมัคร" in result["practical_guidance"][0] and "เรซูเม่" in result["practical_guidance"][0]
+    assert "แบ่งเวลา" in result["card_connections"] and "ข้อผูกมัด" in result["overall_summary"]
+    assert "คนที่รู้จักสายงาน" in result["practical_guidance"][1]
+    assert "(ประเด็น" not in result["card_connections"]
+    assert client.get(f"{path}/interpretation").json() == result
+
+
+def test_the_same_question_reflects_the_cards_and_their_orientation(client, monkeypatch):
+    monkeypatch.setattr(readings, "get_provider", lambda _: None)
+    readings_settings = readings.get_settings()
+    monkeypatch.setattr(readings_settings, "reversed_cards_enabled", True)
+
+    results = []
+    for draw, reversed_cards in (([66, 5, 64, 38, 16], set()), ([66, 5, 64, 38, 16], {3, 4, 5}),
+                                 ([3, 12, 19, 9, 6], set())):
+        deck = draw + [card_id for card_id in range(1, 79) if card_id not in draw]
+        monkeypatch.setattr(readings, "_shuffled_deck", lambda _: deck)
+        flags = iter(int(position in reversed_cards) for position in range(1, 6))
+        monkeypatch.setattr(readings.secrets, "randbelow", lambda _: next(flags))
+        reading = create(client, {"category_id": 4, "spread_id": 2, "question_id": 32}).json()
+        path = f"{ROOT}/{reading['id']}"
+        draw_and_reveal(client, path, 5)
+        response = client.post(f"{path}/interpret")
+        assert response.is_success, response.text
+        results.append(response.json())
+
+    upright, reversed_, different = results
+    assert all("แน่นอนไม่ได้" in result["overall_summary"] for result in results)
+    assert "ข้อผูกมัด" in upright["overall_summary"] and "ข้อผูกมัด" not in reversed_["overall_summary"]
+    assert MEANINGS[16]["reversed_description"] in reversed_["overall_summary"]
+    assert MEANINGS[64]["reversed_description"] in reversed_["card_connections"]
+    assert MEANINGS[64]["upright_description"] not in reversed_["card_connections"]
+    assert MEANINGS[38]["reversed_description"] in reversed_["practical_guidance"][1]
+    assert MEANINGS[6]["upright_description"] in different["overall_summary"]
+    assert MEANINGS[19]["upright_description"] in different["card_connections"]
+    assert MEANINGS[9]["career_meaning"] in different["practical_guidance"][1]
+
+
+@pytest.mark.parametrize("spread", [1, 2, 3])
+def test_fallback_connects_each_spread_and_uses_selected_orientation(client, monkeypatch, spread):
     monkeypatch.setattr(readings, "get_provider", lambda _: None)
     monkeypatch.setattr(readings, "_shuffled_deck", lambda _: list(range(1, 79)))
     path, count = begin_reading(client, category=4, spread=spread)
@@ -382,8 +426,13 @@ def test_fallback_connects_each_spread_and_uses_selected_orientation(client, mon
     assert response.is_success, response.text
     result = response.json()
     connections = result["card_connections"]
-    assert all(role in connections for role in roles)
+    assert "(ประเด็น" not in connections
+    assert connections != result["overall_summary"]
     guidance = result["practical_guidance"]
+    assert any(
+        MEANINGS[card["card"]["id"]]["reversed_description"] in f"{connections} {result['overall_summary']}"
+        for card in cards if card["orientation"] == "reversed"
+    )
     for entry, card in zip(result["card_interpretations"], cards, strict=True):
         meaning = MEANINGS[card["card"]["id"]]
         selected = meaning[f"{card['orientation']}_description"]
@@ -391,10 +440,10 @@ def test_fallback_connects_each_spread_and_uses_selected_orientation(client, mon
         prose = entry["interpretation"]
         assert entry["card_id"] == card["card"]["id"]
         assert entry["position"] == card["position_number"] and entry["orientation"] == card["orientation"]
+        assert entry["position_name"] == card["position"]["meaning_th"]
         assert prose.index(selected) < prose.index(meaning["career_meaning"])
         assert other not in prose
-        assert card["meaning"]["keywords"][0] in connections and card["card"]["name_th"] in connections
-        assert all(step not in prose and meaning["career_meaning"] not in step for step in guidance)
+        assert all(step not in prose for step in guidance)
 
 
 def test_fallback_handles_blank_and_long_meanings(client, database, monkeypatch):
@@ -423,8 +472,7 @@ def test_fallback_handles_blank_and_long_meanings(client, database, monkeypatch)
         assert response.is_success, response.text
         result = response.json()
         first, second, third = (entry["interpretation"] for entry in result["card_interpretations"])
-        assert f"«{question}»" in result["overall_summary"]
-        assert f"«{question[:119]}…»" in first
+        assert question not in result["overall_summary"]
         for paragraph in (first, second, third):
             assert len(paragraph) < 4000
         assert "มีข้อมูลความหมายของทิศนี้ไม่พอ" in first

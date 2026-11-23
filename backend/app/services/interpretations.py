@@ -33,37 +33,30 @@ CATEGORY_ACTIONS = {
     "career": "จดตัวอย่างจากงานจริงหนึ่งเหตุการณ์ที่ช่วยตอบคำถาม แล้วระบุข้อมูลที่ยังขาด",
     "guidance": "เขียนสิ่งที่ควบคุมได้หนึ่งอย่าง แล้วเลือกวิธีทดลองทำในสัปดาห์นี้",
 }
-CAREER_QUESTION_ACTIONS = (
-    ("เปลี่ยนงาน", "เทียบงานปัจจุบันกับงานที่สนใจโดยใช้เงื่อนไขเดียวกัน เช่น หน้าที่ เวลา และรายได้ แล้วตรวจข้อมูลที่ยังไม่ชัด"),
-    ("เติบโต", "เลือกทักษะที่อยากพัฒนาหนึ่งอย่าง แล้วถามว่ามีงานชิ้นไหนให้ลองฝึกและรับข้อเสนอแนะได้"),
-    ("เพื่อนร่วมงาน", "ทบทวนบทสนทนาล่าสุด แล้วเลือกความคาดหวังเรื่องงานหนึ่งข้อที่ควรคุยให้ชัด"),
-    ("งานใหม่", "เลือกหน้าที่หนึ่งข้อจากงานใหม่ แล้วจดสิ่งที่ทำได้แล้วและสิ่งที่ต้องฝึกเพิ่ม"),
+CATEGORY_SUMMARIES = {
+    "daily-life": "เริ่มจากเรื่องที่กินแรงหรือเวลาของคุณมากที่สุด แล้วดูว่ามีส่วนไหนที่จัดการได้ตอนนี้",
+    "finance": "ก่อนตัดสินใจเรื่องเงิน ให้แยกสิ่งที่เกิดขึ้นจริงจากสิ่งที่คาดไว้ โดยเฉพาะรายรับ รายจ่าย และเงื่อนไขที่ยังไม่ชัด",
+    "love": "ลองดูว่าคำพูดและการกระทำที่เกิดขึ้นจริงตรงกับสิ่งที่คุณต้องการจากความสัมพันธ์แค่ไหน",
+    "career": "ลองแยกเรื่องที่คุณปรับเองได้ออกจากเรื่องที่ต้องตกลงกับคนอื่น จะได้เห็นว่าควรเริ่มตรงไหน",
+    "guidance": "ลองมองหาสิ่งที่เกิดซ้ำในเรื่องนี้ เพราะอาจช่วยให้เห็นว่าควรเปลี่ยนอะไรทีละอย่าง",
+}
+CAREER_QUESTION_GUIDANCE = (
+    ("เปลี่ยนงาน", "ถ้ากำลังชั่งใจว่าจะเปลี่ยนงานไหม ให้เริ่มจากดูว่างานใหม่แก้ปัญหาที่อยากออกจากงานเดิมได้จริงหรือเปล่า",
+     "เทียบงานปัจจุบันกับงานที่สนใจในเรื่องหน้าที่ เวลา และรายได้ แล้วตรวจข้อมูลที่ยังไม่ชัด"),
+    ("เติบโต", "ถ้าอยากเติบโตในงาน ลองมองหาทักษะที่ได้ใช้กับงานจริงและเห็นความคืบหน้าได้",
+     "เลือกทักษะหนึ่งอย่าง แล้วถามว่ามีงานชิ้นไหนให้ลองฝึกและขอคำแนะนำได้"),
+    ("เพื่อนร่วมงาน", "เรื่องเพื่อนร่วมงานอาจเริ่มแก้ได้จากการคุยกันให้ชัดว่าแต่ละฝ่ายคาดหวังอะไร",
+     "เลือกเหตุการณ์ล่าสุดหนึ่งครั้ง แล้วถามถึงข้อตกลงที่อยากให้ชัดขึ้น เช่น ใครทำอะไรและส่งเมื่อไหร่"),
 )
-POSITION_REFLECTIONS = {
-    3: (
-        "ประเด็นนี้ปรากฏอยู่ตรงไหนในสถานการณ์ตอนนี้",
-        "ประเด็นนี้อาจทำให้ติดขัดหรือมีอิทธิพลต่อทางเลือกอย่างไร",
-        "มีวิธีไหนที่นำประเด็นนี้ไปลองทำได้ในสถานการณ์ของคุณ",
-    ),
-    5: (
-        "ประเด็นนี้คล้ายกับสิ่งที่เกิดขึ้นตอนนี้ตรงไหน",
-        "ประเด็นนี้เกี่ยวข้องกับเหตุที่ทำให้สถานการณ์เป็นแบบนี้อย่างไร",
-        "ประเด็นนี้อาจบอกอะไรเกี่ยวกับอุปสรรคที่ยังต้องจัดการ",
-        "มีทักษะหรือความช่วยเหลืออะไรที่ใช้รับมือกับประเด็นนี้ได้",
-        "ทางเลือกไหนที่ลองได้โดยเริ่มจากสิ่งที่มีอยู่",
-    ),
-    10: (
-        "ประเด็นนี้คล้ายกับสิ่งที่กำลังเกิดขึ้นตรงไหน",
-        "แรงต้านในประเด็นนี้อาจเปลี่ยนทางเลือกของคุณอย่างไร",
-        "ประเด็นนี้ช่วยให้เห็นว่าคุณอยากไปถึงอะไรชัดขึ้นไหม",
-        "มีเงื่อนไขหรือความต้องการอะไรอยู่เบื้องหลังประเด็นนี้",
-        "เหตุการณ์ที่เพิ่งผ่านไปเกี่ยวข้องกับประเด็นนี้อย่างไร",
-        "ถ้าสถานการณ์ยังดำเนินแบบเดิม มีสัญญาณอะไรที่ควรสังเกตในระยะใกล้",
-        "วิธีที่คุณมองบทบาทของตัวเองมีผลกับประเด็นนี้อย่างไร",
-        "เงื่อนไขรอบตัวข้อไหนที่สังเกตหรือสอบถามให้ชัดได้",
-        "ความหวังหรือความกังวลอาจทำให้คุณให้น้ำหนักข้อมูลข้อนี้มากขึ้นไหม",
-        "ทิศทางที่เห็นขึ้นอยู่กับเงื่อนไขอะไร และอะไรอาจทำให้เปลี่ยนได้",
-    ),
+TIMING_CUES = ("เมื่อไร", "เมื่อไหร่", "ตอนไหน", "ช่วงไหน", "เดือนไหน", "นานแค่ไหน", "อีกนานไหม", "กี่วัน", "กี่เดือน", "กี่ปี")
+JOB_SEARCH_CUES = ("งานใหม่", "สมัครงาน", "หางาน", "สัมภาษณ์งาน", "เปลี่ยนงาน")
+JOB_OFFER_CUES = ("ได้งาน", "จะได้เริ่มงาน", "ข้อเสนองาน", "ผลสัมภาษณ์")
+PLAIN_TOPICS = {
+    "หมุนหลายอย่าง": "การแบ่งเวลาให้หลายเรื่องพร้อมกัน",
+    "โครงสร้าง": "กติกาและหน้าที่ที่ต้องรับผิดชอบ",
+    "เหตุผล": "เกณฑ์ที่ใช้ตัดสินใจ",
+    "แลกเปลี่ยน": "ความร่วมมือที่ดีต่อทั้งสองฝ่าย",
+    "พันธนาการ": "ข้อผูกมัดที่ทำให้ขยับตัวลำบาก",
 }
 
 
@@ -139,72 +132,167 @@ def cached_result(
     return result
 
 
+def _answer_question(payload: InterpretationInput) -> tuple[str, list[str]]:
+    question = "".join(payload.question.split())
+    timing = any(cue in question for cue in TIMING_CUES)
+    if payload.category == "career":
+        looking_for_work = any(cue in question for cue in JOB_SEARCH_CUES)
+        if timing and any(cue in question for cue in JOB_OFFER_CUES):
+            return (
+                "ไพ่บอกวันได้งานใหม่แน่นอนไม่ได้ ให้ดูความคืบหน้าจากสัญญาณจริง เช่น เจอประกาศงานที่ตรงกับคุณ "
+                "มีบริษัทติดต่อกลับ หรือได้รับนัดสัมภาษณ์",
+                ["เลือกประกาศงานที่อยากสมัครหนึ่งตำแหน่ง แล้วปรับเรซูเม่ให้เห็นผลงานที่ตรงกับหน้าที่ในประกาศ"],
+            )
+        if timing and "เปลี่ยนงาน" in question:
+            return (
+                "ถ้ากำลังเลือกจังหวะย้ายงาน ให้ดูว่าได้รับข้อเสนอที่มีเงื่อนไขชัดเจนและจัดการงานเดิมได้เมื่อไหร่",
+                ["เช็กวันเริ่มงานที่บริษัทใหม่เสนอและระยะเวลาแจ้งลาออกของงานปัจจุบัน ก่อนตกลงวันย้าย"],
+            )
+        if timing and looking_for_work:
+            return (
+                "ถ้าเจอประกาศที่ตรงกับทักษะและมีตัวอย่างผลงานพร้อม ก็เริ่มสมัครได้เลย ให้ยึดกำหนดปิดรับสมัครเป็นหลัก",
+                ["เลือกประกาศงานหนึ่งตำแหน่ง แล้วเช็กวันปิดรับสมัครกับเอกสารที่ต้องส่ง"],
+            )
+        for cue, summary, action in CAREER_QUESTION_GUIDANCE:
+            if cue in question:
+                return summary, [action]
+        if looking_for_work:
+            return (
+                "ถ้ากำลังเตรียมหางาน ลองดูว่างานแบบไหนที่เหมาะกับคุณ และมีผลงานชิ้นไหนที่แสดงให้เห็นว่าคุณทำได้",
+                ["เลือกประกาศงานที่สนใจหนึ่งตำแหน่ง แล้วจับคู่คุณสมบัติที่เขาต้องการกับตัวอย่างผลงานของคุณ"],
+            )
+    if payload.category == "love" and any(who in question for who in ("เขา", "เค้า", "อีกฝ่าย", "คนคุย")) and any(
+        cue in question for cue in ("คิดอย่างไร", "คิดยังไง", "รู้สึกอย่างไร", "รู้สึกยังไง", "คิดอะไร")
+    ):
+        return (
+            "ไพ่บอกแทนเขาไม่ได้ว่าเขาคิดหรือรู้สึกยังไง ลองดูว่าที่เขาพูดและทำสอดคล้องกันแค่ไหน",
+            ["ถ้าอยากคุยให้ชัด ลองถามว่า ‘ช่วงนี้เธอมองความสัมพันธ์ของเรายังไงบ้าง’ แล้วให้เวลาเขาตอบ"],
+        )
+    summary = CATEGORY_SUMMARIES[payload.category]
+    if timing:
+        summary = f"ไพ่ระบุวันหรือช่วงเวลาที่แน่นอนไม่ได้ {summary}"
+    return summary, [CATEGORY_ACTIONS[payload.category]]
+
+
+def _card_observation(card: FixedCard) -> str | None:
+    if card.orientation_meaning:
+        return _excerpt(card.orientation_meaning, 150)
+    if card.keywords:
+        return f"คำสำคัญของไพ่{card.name_th}คือ ‘{card.keywords[0]}’"
+    return None
+
+
+def _card_topic(card: FixedCard) -> str | None:
+    return next((PLAIN_TOPICS[keyword] for keyword in card.keywords if keyword in PLAIN_TOPICS), None)
+
+
+def _card_summary(payload: InterpretationInput) -> str | None:
+    # The short answer adds one takeaway. The longer synthesis covers the other positions.
+    card = payload.cards[1] if payload.card_count == 3 else payload.cards[-1]
+    role = {3: "อุปสรรค", 5: "คำแนะนำ", 10: "ทิศทางที่เป็นไปได้"}[payload.card_count]
+    topic = _card_topic(card)
+    if topic:
+        return f"ไพ่{card.name_th}ในตำแหน่ง{role}ชวนให้ดูว่า{topic}มีผลกับเรื่องนี้ไหม"
+    observation = _card_observation(card)
+    if observation:
+        return f"ลองดูมุม{role}จากไพ่{card.name_th}ประกอบ {observation}"
+    return None
+
+
+def _card_action(payload: InterpretationInput) -> str | None:
+    # Choose the actionable role, rather than reusing the card highlighted in the short answer.
+    card = payload.cards[{3: 2, 5: 3, 10: 6}[payload.card_count]]
+    if (payload.category == "career" and card.orientation == "upright" and "แลกเปลี่ยน" in card.keywords
+            and any(cue in payload.question for cue in JOB_SEARCH_CUES)):
+        return f"ตามแนวของไพ่{card.name_th} ลองให้คนที่รู้จักสายงานอ่านเรซูเม่ แล้วถามว่าผลงานข้อไหนตรงกับประกาศที่สุด"
+    if card.orientation == "upright" and card.category_meaning:
+        return f"ถ้าเข้ากับสถานการณ์ของคุณ {_excerpt(card.category_meaning, 180)} ตามแนวของไพ่{card.name_th}"
+    topic = _card_topic(card)
+    if topic:
+        return f"ลองนึกถึงเหตุการณ์จริงที่เกี่ยวกับ{topic} แล้วดูว่ามีส่วนไหนที่คุณปรับได้หนึ่งอย่าง"
+    observation = _card_observation(card)
+    if observation:
+        return f"จดเหตุการณ์ที่เกี่ยวกับคำถามหนึ่งครั้ง แล้วดูว่าตรงกับข้อสังเกตจากไพ่{card.name_th}ไหม — {observation}"
+    return None
+
+
+def _role_observation(card: FixedCard, role: str) -> str:
+    observation = _card_observation(card)
+    if observation:
+        return f"ในตำแหน่ง{role} ไพ่{card.name_th}ให้ข้อสังเกตนี้ {observation}"
+    return f"ความหมายของไพ่{card.name_th}ในตำแหน่ง{role}ยังมีข้อมูลไม่พอ"
+
+
+def _connect_cards(payload: InterpretationInput) -> str:
+    if payload.card_count == 3:
+        situation, obstacle, advice = payload.cards
+        return (
+            f"{_role_observation(situation, 'สถานการณ์')} {_role_observation(advice, 'คำแนะนำ')} "
+            f"ลองเทียบสองมุมนี้กับอุปสรรคจากไพ่{obstacle.name_th} "
+            "ถ้าแนวทางนั้นช่วยคลายจุดที่ติดขัดในสถานการณ์จริง ก็ใช้เป็นก้าวแรกได้"
+        )
+    if payload.card_count == 5:
+        situation, root, obstacle, resource, advice = payload.cards
+        situation_topic = _card_topic(situation)
+        root_topic = _card_topic(root)
+        if situation_topic and root_topic:
+            background = (
+                f"ไพ่{situation.name_th}พูดถึง{situation_topic} ส่วนไพ่{root.name_th}ในตำแหน่งรากฐานชวนดูว่า"
+                f"{root_topic}มีส่วนทำให้เรื่องเป็นแบบนี้หรือเปล่า"
+            )
+        else:
+            background = f"{_role_observation(situation, 'สถานการณ์')} {_role_observation(root, 'รากฐาน')}"
+        resource_topic = _card_topic(resource)
+        next_step = (
+            f"ถ้านี่คือจุดที่ติด ลองดูว่า{resource_topic}จากไพ่{resource.name_th}ช่วยได้ตรงไหน"
+            if resource_topic
+            else f"{_role_observation(resource, 'จุดแข็ง')} ลองดูว่ามุมนี้ช่วยรับมือกับอุปสรรคได้ตรงไหน"
+        )
+        return (
+            f"{background} {_role_observation(obstacle, 'อุปสรรค')} {next_step} "
+            f"ก่อนตกลงใจ ให้ชั่งทางเลือกที่ได้กับคำแนะนำจากไพ่{advice.name_th}"
+        )
+    situation, crossing, goal, root, past, near_future, self_view, environment, hopes, direction = payload.cards
+    return (
+        f"{_role_observation(situation, 'สถานการณ์')} {_role_observation(crossing, 'อุปสรรค')} "
+        f"ลองเทียบสิ่งที่ขวางอยู่กับเป้าหมายจากไพ่{goal.name_th} ถ้าติดที่เงื่อนไขเดิม ให้ย้อนดูรากฐานจากไพ่{root.name_th} "
+        f"และดูว่าเรื่องที่ผ่านมาในไพ่{past.name_th}ยังส่งผลต่อช่วงถัดไปไหม {_role_observation(near_future, 'อนาคตอันใกล้')} "
+        f"ก่อนมองทิศทางจากไพ่{direction.name_th} ลองแยกมุมมองของตัวเองจากไพ่{self_view.name_th} "
+        f"กับเงื่อนไขรอบตัวที่ไพ่{environment.name_th}สะท้อน และเช็กว่าความหวังหรือความกลัวจากไพ่{hopes.name_th}"
+        "กำลังทำให้มองข้ามสิ่งที่เกิดขึ้นจริงหรือเปล่า"
+    )
+
+
 def database_interpretation(payload: InterpretationInput) -> InterpretationResult:
     card_interpretations = []
-    themes = []
-    question_excerpt = _excerpt(payload.question, 120)
-    for index, (card, reflection) in enumerate(zip(payload.cards, POSITION_REFLECTIONS[payload.card_count], strict=True)):
+    for card in payload.cards:
         orientation = "ตั้งตรง" if card.orientation == "upright" else "กลับหัว"
-        label = f"ไพ่{card.name_th} ({orientation}) อยู่ในตำแหน่ง{card.position_meaning}."
+        label = f"ไพ่{card.name_th}{orientation}ในตำแหน่ง{card.position_meaning}"
         if card.orientation_meaning:
             parts = [label, card.orientation_meaning]
         elif card.keywords:
-            parts = [label, f"ประเด็นสำคัญของใบนี้คือ{card.keywords[0]}"]
+            parts = [label, f"คำสำคัญของใบนี้คือ ‘{card.keywords[0]}’"]
         else:
             parts = [label, "มีข้อมูลความหมายของทิศนี้ไม่พอ จึงควรดูประกอบกับสิ่งที่เกิดขึ้นจริง"]
         if card.category_meaning and card.category_meaning != card.orientation_meaning:
-            parts.append(f"ในเรื่อง{payload.category_name} {card.category_meaning}")
-        parts.append(f"เมื่อเทียบกับคำถาม «{question_excerpt}» {reflection}" if index == 0 else reflection)
+            parts.append(f"ถ้าโยงกับคำถามของคุณ {card.category_meaning}")
         card_interpretations.append(CardInterpretation(
             position=card.position, position_name=card.position_name,
             card_id=card.card_id, orientation=card.orientation,
             interpretation=" ".join(parts),
         ))
-        theme = card.keywords[0] if card.keywords else _excerpt(card.orientation_meaning, 85)
-        themes.append(
-            f"ไพ่{card.name_th} (ประเด็น{theme})" if theme
-            else f"ตำแหน่ง{_excerpt(card.position_name, 100)}"
-        )
 
-    if payload.card_count == 3:
-        situation, obstacle, advice = themes
-        connections = (
-            f"{situation} เป็นภาพตั้งต้นของสถานการณ์ ขณะที่ {obstacle} อยู่ตรงจุดที่ขัดขวาง "
-            f"จึงอาจทำให้เรื่องเดินต่อยากขึ้น ส่วน {advice} อยู่ในตำแหน่งแนวทาง "
-            "การจัดการจุดติดขัดก่อนจะช่วยให้เลือกขั้นต่อไปได้ชัดขึ้น"
-        )
-        focus = "สิ่งที่ติดขัดตอนนี้อาจช่วยบอกว่าควรปรับอะไรเป็นอันดับแรก"
-        next_step = "เลือกสิ่งที่ติดขัดหนึ่งข้อ แล้วลองปรับทีละอย่างเพื่อดูว่าอะไรช่วยได้จริง"
-    elif payload.card_count == 5:
-        situation, root, obstacle, resource, advice = themes
-        connections = (
-            f"{situation} แสดงสิ่งที่เห็นในตอนนี้ ส่วนรากฐานจาก {root} อาจช่วยอธิบายว่า "
-            f"เหตุใด {obstacle} จึงเป็นอุปสรรค ทรัพยากรจาก {resource} กับแนวทางจาก {advice} "
-            "จึงควรถูกพิจารณาคู่กันก่อนเลือกสิ่งที่จะลงมือ"
-        )
-        focus = "ลองแยกสาเหตุออกจากสิ่งที่เห็นตอนนี้ แล้วเลือกทางที่ใช้ทรัพยากรที่มีอยู่"
-        next_step = "เลือกจุดแข็งหรือทรัพยากรที่ใช้ได้หนึ่งอย่าง แล้ววางขั้นทดลองเล็ก ๆ ที่ช่วยแก้อุปสรรคหลัก"
-    else:
-        situation, crossing, goal, root, past, near_future, self_view, environment, hopes, direction = themes
-        connections = (
-            f"{situation} วางสถานการณ์ไว้คู่กับอิทธิพลที่เข้ามาขวางจาก {crossing} "
-            f"เป้าหมายจาก {goal} กับรากฐานจาก {root} ช่วยแยกสิ่งที่อยากได้ออกจากสิ่งที่ผลักดันอยู่ "
-            f"อดีตจาก {past} เป็นบริบทให้กับแนวโน้มระยะใกล้จาก {near_future} "
-            f"มุมมองต่อตัวเองผ่าน {self_view} และปัจจัยรอบตัวผ่าน {environment} อาจให้น้ำหนักต่างกัน "
-            f"ความหวังหรือความกลัวจาก {hopes} จึงไม่ควรถูกใช้แทนข้อมูลเมื่อมองทิศทางจาก {direction}"
-        )
-        focus = "แยกสิ่งที่คุณปรับได้จากแรงกดดันรอบตัวก่อนชั่งน้ำหนักทิศทางที่เป็นไปได้"
-        next_step = "จดสิ่งที่ขึ้นอยู่กับตัวคุณและสิ่งที่ขึ้นอยู่กับสภาพแวดล้อม แล้วเลือกหนึ่งเรื่องที่คุณลงมือได้"
-
-    action = CATEGORY_ACTIONS[payload.category]
-    if payload.category == "career":
-        action = next((step for cue, step in CAREER_QUESTION_ACTIONS if cue in payload.question), action)
+    summary, guidance = _answer_question(payload)
+    if takeaway := _card_summary(payload):
+        summary = f"{summary} {takeaway}"
+    if action := _card_action(payload):
+        guidance.append(action)
     return InterpretationResult(
         reading_id=payload.reading_id, language="th",
-        overall_summary=f"สำหรับคำถาม «{payload.question}» {focus}",
+        overall_summary=summary,
         card_interpretations=card_interpretations,
-        card_connections=connections,
-        practical_guidance=[action, next_step],
+        card_connections=_connect_cards(payload),
+        practical_guidance=guidance,
         closing_message="เก็บส่วนที่ตรงกับชีวิตจริงไว้ใช้ และวางส่วนที่ไม่ตรงไว้ก่อน",
     )
 
