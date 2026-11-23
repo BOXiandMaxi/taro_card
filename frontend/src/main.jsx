@@ -32,7 +32,7 @@ function useRemote(loader, dependencies = []) {
     Promise.resolve().then(loader).then(data => { if (active) setState({ loading: false, data, error: false }) }).catch(error => { if (active) setState({ loading: false, data: null, error }) })
     return () => { active = false }
   }, [...dependencies, attempt])
-  return { ...state, retry: () => setAttempt(n => n + 1) }
+  return { ...state, retry: () => setAttempt(n => n + 1), updateData: update => setState(current => current.data ? { ...current, data: update(current.data) } : current) }
 }
 function RemoteState({ state, empty = 'ยังไม่มีข้อมูลในขณะนี้', children, authAware = false }) {
   if (state.loading) return <div className="empty-state" role="status">กำลังโหลดข้อมูล…</div>
@@ -100,7 +100,16 @@ function ReadingPage({ result = false }) {
     && new Set(reading.cards.map(item => item.position_number)).size === expected
     && new Set(reading.cards.filter(item => item.revealed).map(item => item.card.id)).size === reading.cards.filter(item => item.revealed).length
   const cards = validCards ? [...reading.cards].sort((a, b) => a.position_number - b.position_number) : []
-  async function reveal(position) { setRevealing(position); setRevealError(false); try { await revealReading(id, position); state.retry() } catch { setRevealError(true) } finally { setRevealing(null) } }
+  async function reveal(position) {
+    if (revealing !== null) return
+    setRevealing(position)
+    setRevealError(false)
+    try {
+      const revealed = await revealReading(id, position)
+      if (!revealed?.revealed || revealed.position_number !== position || !revealed.card?.id || !revealed.card?.name_th || !revealed.card?.name_en || !revealed.position?.meaning_th) throw new Error('Invalid revealed card')
+      state.updateData(current => ({ ...current, cards: current.cards.map(card => card.position_number === position ? revealed : card) }))
+    } catch { setRevealError(true) } finally { setRevealing(null) }
+  }
   async function interpret() {
     if (!user || requestInFlight.current) return
     requestInFlight.current = true
@@ -153,14 +162,15 @@ function ReadingPage({ result = false }) {
   return <Page kicker={result ? '08 / YOUR READING' : '07 / REVEAL'} title={result ? 'คำทำนายของคุณ' : 'เปิดไพ่ของคุณ'} lead={result ? 'ทบทวนความหมายในแต่ละตำแหน่งและคำแนะนำ' : 'เลือกไพ่แต่ละใบเพื่อเปิดดูผลที่บันทึกไว้'} back="/categories">
     {state.loading ? <div className="empty-state" role="status">กำลังโหลดผลการเปิดไพ่…</div> : state.error ? <div className="empty-state" role="alert"><h2>ยังโหลดผลการเปิดไพ่ไม่ได้</h2><p>โปรดตรวจสอบการเชื่อมต่อและสิทธิ์เข้าถึง แล้วลองอีกครั้ง</p><button className="button button-outline" onClick={state.retry}>ลองอีกครั้ง <RefreshCw size={16} /></button></div> : !validCards ? <div className="empty-state" role="alert"><CircleHelp className="empty-inline-icon" size={26} aria-hidden="true" /><h2>ยังแสดงผลไพ่ไม่ได้</h2><p>ข้อมูลที่ระบบส่งมายังไม่มีรายละเอียดไพ่และตำแหน่งในรูปแบบที่รองรับ</p><button className="button button-outline" onClick={state.retry}>ลองอีกครั้ง <RefreshCw size={16} /></button></div> : <>
       <div className="reading-summary"><p><strong>คำถาม:</strong> {reading.question?.prompt_th || reading.question_text || 'ไม่มีข้อมูลคำถาม'}</p><p><strong>รูปแบบ:</strong> {reading.spread?.name_th || 'ไม่มีข้อมูลรูปแบบไพ่'}</p>{result && cards.every(item => item.revealed) && <a className="account-link" href="#interpretation">ข้ามไปอ่านคำทำนาย <ArrowRight size={16} aria-hidden="true" /></a>}</div>
+      {!result && <div className="reveal-progress" aria-live="polite"><span>เปิดไพ่แล้ว</span><strong>{cards.filter(item => item.revealed).length} <span>/ {cards.length} ใบ</span></strong></div>}
       <div className="revealed-grid">{cards.map(item => {
         const isOpen = item.revealed
         const meaning = Array.isArray(interpretation?.card_interpretations) ? interpretation.card_interpretations.find(entry => entry.position === item.position_number && entry.card_id === item.card?.id) : null
-        return <article className="revealed-item" key={item.position_number}>
+        return <article className={`revealed-item ${isOpen ? 'is-revealed' : ''}`} key={item.position_number}>
           <h2><span>ตำแหน่งที่ {item.position_number}</span>{item.position.meaning_th}</h2>
           <div className="revealed-content">
-            <button type="button" className={`flip-card ${isOpen ? 'is-open' : ''}`} aria-label={isOpen ? `${item.card.name_th} ${item.card.name_en}` : `เปิดไพ่ตำแหน่ง ${item.position_number} ${item.position.meaning_th}`} aria-pressed={isOpen} disabled={!!revealing || isOpen} onClick={() => reveal(item.position_number)}><span className="flip-inner"><span className="flip-back"><img src={BACK} alt="" /></span><span className="flip-front">{isOpen && <img className={item.orientation === 'reversed' && item.card.image_path && !item.card.image_path.includes('card-placeholder.svg') ? 'card-image-reversed' : undefined} src={item.card.image_path || `${import.meta.env.BASE_URL}assets/cards/card-placeholder.svg`} onError={event => { event.currentTarget.onerror = null; event.currentTarget.classList.remove('card-image-reversed'); event.currentTarget.src = `${import.meta.env.BASE_URL}assets/cards/card-placeholder.svg` }} alt="" />}</span></span></button>
-            <div className="revealed-info">{isOpen ? <><h3>{item.card.name_th}</h3><p className="card-name-en">{item.card.name_en}</p>{item.orientation && <p className="card-orientation">{item.orientation === 'reversed' ? 'ไพ่กลับหัว' : item.orientation === 'upright' ? 'ไพ่ตั้งตรง' : ''}</p>}{item.meaning && <details><summary>ความหมายไพ่{item.orientation === 'reversed' ? 'กลับหัว' : 'ตั้งตรง'}</summary>{Array.isArray(item.meaning.keywords) && item.meaning.keywords.length > 0 && <p><strong>คำสำคัญ:</strong> {item.meaning.keywords.join(' · ')}</p>}{item.meaning.description && <p>{item.meaning.description}</p>}</details>}{result && meaning?.interpretation && <details><summary>ความหมายของไพ่ใบนี้</summary><p>{meaning.interpretation}</p></details>}</> : <p className="reveal-hint">แตะไพ่เพื่อเปิดดู</p>}</div>
+            <button type="button" className={`flip-card ${isOpen ? 'is-open' : ''} ${revealing === item.position_number ? 'is-revealing' : ''}`} aria-label={isOpen ? `${item.card.name_th} ${item.card.name_en}` : `เปิดไพ่ตำแหน่ง ${item.position_number} ${item.position.meaning_th}`} aria-pressed={isOpen} aria-disabled={!!revealing || isOpen} aria-busy={revealing === item.position_number} onClick={() => { if (!revealing && !isOpen) reveal(item.position_number) }}><span className="flip-inner"><span className="flip-back"><img src={BACK} alt="" /></span><span className="flip-front">{isOpen && <img className={item.orientation === 'reversed' && item.card.image_path && !item.card.image_path.includes('card-placeholder.svg') ? 'card-image-reversed' : undefined} src={item.card.image_path || `${import.meta.env.BASE_URL}assets/cards/card-placeholder.svg`} onError={event => { event.currentTarget.onerror = null; event.currentTarget.classList.remove('card-image-reversed'); event.currentTarget.src = `${import.meta.env.BASE_URL}assets/cards/card-placeholder.svg` }} alt="" />}</span></span></button>
+            <div className="revealed-info">{isOpen ? <><h3>{item.card.name_th}</h3><p className="card-name-en">{item.card.name_en}</p>{item.orientation && <p className="card-orientation">{item.orientation === 'reversed' ? 'ไพ่กลับหัว' : item.orientation === 'upright' ? 'ไพ่ตั้งตรง' : ''}</p>}{item.meaning && <details><summary>ความหมายไพ่{item.orientation === 'reversed' ? 'กลับหัว' : 'ตั้งตรง'}</summary>{Array.isArray(item.meaning.keywords) && item.meaning.keywords.length > 0 && <p><strong>คำสำคัญ:</strong> {item.meaning.keywords.join(' · ')}</p>}{item.meaning.description && <p>{item.meaning.description}</p>}</details>}{result && meaning?.interpretation && <details><summary>ความหมายของไพ่ใบนี้</summary><p>{meaning.interpretation}</p></details>}</> : <div className="reveal-prompt"><span aria-hidden="true">✦</span><p className="reveal-hint" role={revealing === item.position_number ? 'status' : undefined}>{revealing === item.position_number ? 'กำลังเปิดไพ่…' : 'แตะไพ่เพื่อเปิดดู'}</p><small>ค่อย ๆ เปิดดูทีละใบ</small></div>}</div>
           </div>
         </article>
       })}</div>

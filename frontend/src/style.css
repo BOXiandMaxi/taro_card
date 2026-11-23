@@ -83,3 +83,41 @@ button{font:inherit;cursor:pointer}button:focus-visible,summary:focus-visible{ou
   .account-actions{align-items:stretch;flex-direction:column;gap:10px}
   .history-actions .account-link,.history-delete{min-height:44px;display:inline-flex;align-items:center}
 }
+
+/* Reveal: keep the persisted card in place as it turns. */
+.reading-summary{padding:20px 24px;background:#1d203c;color:#f7f2e8;border-left:3px solid #c7a866;border-radius:4px}
+.reading-summary strong{color:#e9d3a3}
+.reading-summary .account-link{color:#f2dfb5}
+.reveal-progress{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin:30px 0 0;padding:0 2px 12px;border-bottom:1px solid #dcd5c8;color:#5d5969;font-size:14px}
+.reveal-progress strong{color:#51435f;font-size:19px}
+.reveal-progress strong span{font-size:13px;font-weight:500;color:#716b78}
+.reveal-progress+.revealed-grid{margin-top:16px}
+.revealed-grid{gap:18px}
+.revealed-item{padding:22px;border-color:#ded8cc;border-radius:8px;box-shadow:0 5px 18px #241b3510;transition:border-color .25s,box-shadow .25s}
+.revealed-item.is-revealed{border-color:#c9b786}
+.revealed-item h2{padding-bottom:12px;border-bottom:1px solid #eee8de;color:#312a40}
+.revealed-item h2 span{letter-spacing:.03em}
+.revealed-content{gap:20px}
+.flip-card{cursor:pointer;border-radius:7px;outline-offset:5px;-webkit-tap-highlight-color:transparent}
+.flip-card:focus-visible{outline:3px solid #9c772d}
+.flip-card[aria-disabled="true"]{cursor:default}
+.flip-inner{transition:transform .85s cubic-bezier(.2,.7,.2,1),filter .25s}
+.flip-back,.flip-front{border-radius:7px;box-shadow:0 8px 16px #171a3530;-webkit-backface-visibility:hidden}
+.flip-card img{display:block;border-radius:7px}
+@media(hover:hover){.flip-card:not([aria-disabled="true"]):hover .flip-inner{transform:translateY(-5px);filter:brightness(1.06)}}
+.flip-card.is-revealing .flip-inner{filter:brightness(1.14)}
+.revealed-info{padding-top:2px}
+.reveal-prompt{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.reveal-prompt>span{color:#9c7b38;font-size:22px;line-height:1}
+.revealed-item .reveal-hint{color:#342d45;font-weight:700;font-size:14px}
+.reveal-prompt small{color:#716b78;font-size:12px;line-height:1.7}
+@media(max-width:700px){
+  .reading-summary{padding:16px 18px}
+  .revealed-grid{gap:12px}
+  .revealed-item{padding:16px}
+  .revealed-content{gap:16px}
+}
+@media(prefers-reduced-motion:reduce){
+  .flip-inner,.revealed-item{transition:none}
+  .flip-card:not([aria-disabled="true"]):hover .flip-inner{transform:none}
+}
