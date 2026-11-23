@@ -63,11 +63,14 @@ Remove-Item Env:DATABASE_URL
    **New → Blueprint**.
 2. Connect GitHub and select `BOXiandMaxi/taro_card` on branch `main`.
 3. Render reads `render.yaml`. Confirm the single `taro-card` **Free** web
-   service in Singapore. When prompted for `DATABASE_URL`, paste the same
-   TiDB URL. The Blueprint generates a stable `SECRET_KEY` and enables secure
+   service in Singapore. When prompted for `DATABASE_URL`, paste the value of
+   the `DATABASE_URL` line in the private `backend/.env.render.local` file if
+   the runtime account has been prepared; otherwise use a dedicated TiDB
+   account with read/write access to `tarot_reading`. The Blueprint generates
+   a stable `SECRET_KEY` and enables secure
    cookies. Keep the database URL and generated secret only in Render's
    environment settings.
-4. Click **Apply** and wait for the Docker build and deploy. Open the assigned
+4. Click **Deploy Blueprint** and wait for the Docker build and deploy. Open the assigned
    `https://...onrender.com` URL, then check `/api/health` at the same host.
 
 The frontend uses `/api` on this same host; no frontend URL or CORS setting is
