@@ -56,8 +56,8 @@ function draftSignature(draft) { return `${draft.category?.id}:${draft.question?
 function pendingFor(draft) { const saved = readSession(PENDING_KEY, null); return saved?.signature === draftSignature(draft) ? saved : null }
 function savePending(value) { sessionStorage.setItem(PENDING_KEY, JSON.stringify(value)) }
 const DECK_SIZE = 78
-const DEAL_DURATION_MS = 600
-const DEAL_STAGGER_MS = 5
+const DEAL_DURATION_MS = 800
+const DEAL_STAGGER_MS = 9
 const WHEEL_POSITIONS = Array.from({ length: DECK_SIZE }, (_, index) => {
   const ring = index < 39 ? 0 : index < 65 ? 1 : 2
   const angle = (index - [0, 39, 65][ring]) * 360 / [39, 26, 13][ring]
