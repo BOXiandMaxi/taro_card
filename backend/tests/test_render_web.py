@@ -15,6 +15,7 @@ def test_render_serves_api_assets_and_spa_routes():
         (dist / "index.html").write_text("<!doctype html><title>Tarot</title>", encoding="utf-8")
         (dist / "assets").mkdir()
         (dist / "assets" / "app.js").write_text("console.log('ok')", encoding="utf-8")
+        (dist / "assets" / "card.webp").write_bytes(b"RIFFfakeWEBP")
         with patch.dict(os.environ, {"FRONTEND_ORIGINS": "https://tarot.example", "SECRET_KEY": "a" * 40}):
             get_settings.cache_clear()
             try:
@@ -22,6 +23,7 @@ def test_render_serves_api_assets_and_spa_routes():
                     assert client.get("/").status_code == 200
                     assert client.get("/result/example").text == client.get("/").text
                     assert client.get("/assets/app.js").text == "console.log('ok')"
+                    assert client.get("/assets/card.webp").headers["content-type"] == "image/webp"
                     assert client.get("/api/health").json() == {"status": "ok"}
                     assert client.get("/api/no-such-route").status_code == 404
                     assert client.get("/assets/missing.js").status_code == 404

@@ -1,6 +1,7 @@
 """Render entry point: one HTTPS origin for the SPA and the API."""
 
 import ipaddress
+import mimetypes
 import os
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -21,6 +22,7 @@ from app.main import create_app  # noqa: E402
 
 
 FRONTEND_DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
+mimetypes.add_type("image/webp", ".webp")
 
 
 class SPAFiles(StaticFiles):
