@@ -1,3 +1,4 @@
+from collections import Counter
 from dataclasses import replace
 from datetime import timedelta
 from time import sleep
@@ -57,6 +58,35 @@ PLAIN_TOPICS = {
     "เหตุผล": "เกณฑ์ที่ใช้ตัดสินใจ",
     "แลกเปลี่ยน": "ความร่วมมือที่ดีต่อทั้งสองฝ่าย",
     "พันธนาการ": "ข้อผูกมัดที่ทำให้ขยับตัวลำบาก",
+}
+SYNTHESIS_TOPICS = {
+    **PLAIN_TOPICS,
+    "หลักการ": "การตั้งเกณฑ์ให้ชัด",
+    "แข็งกร้าว": "การยึดเกณฑ์จนปรับตัวได้ยาก",
+    "เย็นชา": "การมองข้ามมุมของคนอื่น",
+    "หลุดพ้น": "การค่อย ๆ คลายสิ่งที่รั้งไว้",
+    "เข้าใจคลาด": "ความเข้าใจที่ยังไม่ตรงกัน",
+    "เริ่มต้น": "การลองทางใหม่",
+    "หุนหัน": "ความรีบจนเตรียมตัวไม่ทัน",
+    "ลงมือทำ": "การใช้สิ่งที่มีให้เกิดผล",
+    "กระจัดกระจาย": "ความสนใจที่ถูกดึงไปหลายทาง",
+    "สัญชาตญาณ": "สิ่งที่ยังไม่มีคำตอบชัด",
+    "คลุมเครือ": "สิ่งที่ยังไม่มีคำตอบชัด",
+    "สับสน": "ความกังวลที่ทำให้มองสถานการณ์ไม่ชัด",
+    "พักฟื้น": "การพักให้พอแล้วค่อยกลับมาลงมือ",
+    "หวัง": "การค่อย ๆ กลับมามีแรง",
+    "ขอความช่วยเหลือ": "การขอแรงจากคนอื่น",
+    "ร่วมมือ": "การขอแรงจากคนอื่น",
+    "ยุติธรรม": "การดูข้อมูลจากทั้งสองฝ่าย",
+    "ลำเอียง": "การให้น้ำหนักกับข้อมูลบางด้านมากเกินไป",
+    "คำสอน": "ข้อแนะนำจากคนที่มีประสบการณ์",
+}
+SYNTHESIS_QUESTIONS = {
+    "daily-life": "เรื่องที่คุณกำลังเจอวันนี้",
+    "finance": "การตัดสินใจเรื่องเงิน",
+    "love": "ความสัมพันธ์ครั้งนี้",
+    "career": "เรื่องงานนี้",
+    "guidance": "คำถามนี้",
 }
 
 
@@ -216,50 +246,65 @@ def _card_action(payload: InterpretationInput) -> str | None:
     return None
 
 
-def _role_observation(card: FixedCard, role: str) -> str:
-    observation = _card_observation(card)
-    if observation:
-        return f"ในตำแหน่ง{role} ไพ่{card.name_th}ให้ข้อสังเกตนี้ {observation}"
-    return f"ความหมายของไพ่{card.name_th}ในตำแหน่ง{role}ยังมีข้อมูลไม่พอ"
+def _synthesis_question(payload: InterpretationInput) -> str:
+    question = "".join(payload.question.split())
+    if payload.category == "career":
+        if any(cue in question for cue in TIMING_CUES) and any(cue in question for cue in JOB_OFFER_CUES):
+            return "การหางานใหม่"
+        if "เปลี่ยนงาน" in question:
+            return "การย้ายงาน"
+        if "เติบโต" in question:
+            return "การเติบโตในงาน"
+        if "เพื่อนร่วมงาน" in question:
+            return "การทำงานกับคนอื่น"
+        if any(cue in question for cue in JOB_SEARCH_CUES):
+            return "การสมัครงาน"
+    return SYNTHESIS_QUESTIONS[payload.category]
+
+
+def _synthesis_topic(*cards: FixedCard, default: str) -> str:
+    # Use orientation-specific keywords. For a group of positions, a shared idea
+    # takes precedence over a single observation, keeping long spreads readable.
+    topics = [
+        next((SYNTHESIS_TOPICS[word] for word in card.keywords if word in SYNTHESIS_TOPICS),
+             next((word for word in card.keywords if len(word) <= 32), None))
+        for card in cards
+    ]
+    matches = Counter(topic for topic in topics if topic)
+    return matches.most_common(1)[0][0] if matches else default
 
 
 def _connect_cards(payload: InterpretationInput) -> str:
+    focus = _synthesis_question(payload)
     if payload.card_count == 3:
         situation, obstacle, advice = payload.cards
+        current = _synthesis_topic(situation, default="สิ่งที่กำลังเกิดขึ้น")
+        friction = _synthesis_topic(obstacle, default="จุดที่ยังติดขัด")
+        opening = _synthesis_topic(advice, default="ทางเลือกที่พอทำได้")
         return (
-            f"{_role_observation(situation, 'สถานการณ์')} {_role_observation(advice, 'คำแนะนำ')} "
-            f"ลองเทียบสองมุมนี้กับอุปสรรคจากไพ่{obstacle.name_th} "
-            "ถ้าแนวทางนั้นช่วยคลายจุดที่ติดขัดในสถานการณ์จริง ก็ใช้เป็นก้าวแรกได้"
+            f"สำหรับ{focus} ไพ่ทั้งสามใบสะท้อนว่า{current}กำลังเจอกับ{friction} "
+            f"ทางที่ไพ่แนะนำคือ{opening} ลองดูว่ามันช่วยให้เรื่องที่ติดอยู่ขยับได้จริงแค่ไหน"
         )
     if payload.card_count == 5:
         situation, root, obstacle, resource, advice = payload.cards
-        situation_topic = _card_topic(situation)
-        root_topic = _card_topic(root)
-        if situation_topic and root_topic:
-            background = (
-                f"ไพ่{situation.name_th}พูดถึง{situation_topic} ส่วนไพ่{root.name_th}ในตำแหน่งรากฐานชวนดูว่า"
-                f"{root_topic}มีส่วนทำให้เรื่องเป็นแบบนี้หรือเปล่า"
-            )
-        else:
-            background = f"{_role_observation(situation, 'สถานการณ์')} {_role_observation(root, 'รากฐาน')}"
-        resource_topic = _card_topic(resource)
-        next_step = (
-            f"ถ้านี่คือจุดที่ติด ลองดูว่า{resource_topic}จากไพ่{resource.name_th}ช่วยได้ตรงไหน"
-            if resource_topic
-            else f"{_role_observation(resource, 'จุดแข็ง')} ลองดูว่ามุมนี้ช่วยรับมือกับอุปสรรคได้ตรงไหน"
-        )
+        current = _synthesis_topic(situation, default="เรื่องที่รับมืออยู่")
+        cause = _synthesis_topic(root, default="เงื่อนไขเดิม")
+        friction = _synthesis_topic(obstacle, default="สิ่งที่ทำให้ยังตัดสินใจไม่ได้")
+        support = _synthesis_topic(resource, default="สิ่งที่คุณพอใช้เป็นแรงช่วยได้")
+        opening = _synthesis_topic(advice, default="ทางเลือกที่พอทำได้")
         return (
-            f"{background} {_role_observation(obstacle, 'อุปสรรค')} {next_step} "
-            f"ก่อนตกลงใจ ให้ชั่งทางเลือกที่ได้กับคำแนะนำจากไพ่{advice.name_th}"
+            f"สำหรับ{focus} ไพ่ชี้ว่า{current}ไม่ได้เกิดขึ้นลอย ๆ แต่มี{cause}อยู่เบื้องหลัง "
+            f"เมื่อเจอ{friction}จึงยิ่งไปต่อยากขึ้น {support}อาจช่วยให้คุณพิจารณา{opening}ได้ชัดกว่าเดิม"
         )
     situation, crossing, goal, root, past, near_future, self_view, environment, hopes, direction = payload.cards
+    pressure = _synthesis_topic(crossing, situation, root, past, default="เงื่อนไขที่ยังติดอยู่")
+    priority = _synthesis_topic(goal, hopes, default="สิ่งที่อยากให้เปลี่ยน")
+    support = _synthesis_topic(environment, self_view, default="สิ่งที่คุณปรับหรือขอความช่วยเหลือได้")
+    opening = _synthesis_topic(direction, near_future, default="ทางที่ลองเดินต่อได้")
     return (
-        f"{_role_observation(situation, 'สถานการณ์')} {_role_observation(crossing, 'อุปสรรค')} "
-        f"ลองเทียบสิ่งที่ขวางอยู่กับเป้าหมายจากไพ่{goal.name_th} ถ้าติดที่เงื่อนไขเดิม ให้ย้อนดูรากฐานจากไพ่{root.name_th} "
-        f"และดูว่าเรื่องที่ผ่านมาในไพ่{past.name_th}ยังส่งผลต่อช่วงถัดไปไหม {_role_observation(near_future, 'อนาคตอันใกล้')} "
-        f"ก่อนมองทิศทางจากไพ่{direction.name_th} ลองแยกมุมมองของตัวเองจากไพ่{self_view.name_th} "
-        f"กับเงื่อนไขรอบตัวที่ไพ่{environment.name_th}สะท้อน และเช็กว่าความหวังหรือความกลัวจากไพ่{hopes.name_th}"
-        "กำลังทำให้มองข้ามสิ่งที่เกิดขึ้นจริงหรือเปล่า"
+        f"สำหรับ{focus} ไพ่หลายตำแหน่งสะท้อนว่า{pressure}กำลังชนกับ{priority} "
+        f"ถ้าอยากขยับจากจุดนี้ ลองดูว่า{support}ช่วยลดแรงกดนั้นได้ไหม "
+        f"และ{opening}ยังเป็นทางที่เหมาะกับสถานการณ์จริงหรือเปล่า"
     )
 
 

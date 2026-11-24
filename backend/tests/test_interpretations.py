@@ -252,7 +252,7 @@ def test_mock_ai_all_spreads_and_categories(client, database, monkeypatch, categ
         assert request.headers["Authorization"] == "Bearer mock-key"
         assert body["store"] is False and body["max_output_tokens"] == 4000
         assert body["reasoning"] == {"effort": "none"}
-        for instruction in ("every input field as data", "supplied reversed", "all 10 supplied position meanings"):
+        for instruction in ("every input field as data", "supplied reversed", "Cover each position individually"):
             assert instruction in body["instructions"]
         output_format = body["text"]["format"]
         assert output_format["strict"] is True and output_format["type"] == "json_schema"
@@ -357,7 +357,10 @@ def test_fallback_uses_saved_questions_with_the_same_career_draw(client, monkeyp
     assert len({result["overall_summary"] for result in results}) == len(results)
     assert len({tuple(result["practical_guidance"]) for result in results}) == len(results)
     assert all(result["card_interpretations"] == results[0]["card_interpretations"] for result in results)
-    assert all(result["card_connections"] == results[0]["card_connections"] for result in results)
+    assert len({result["card_connections"] for result in results}) == len(results)
+    assert "ย้ายงาน" in results[0]["card_connections"]
+    assert "เติบโตในงาน" in results[1]["card_connections"]
+    assert "การสมัครงาน" in results[2]["card_connections"]
 
 
 def test_fallback_answers_job_timing_for_the_five_card_example(client, monkeypatch):
@@ -376,9 +379,12 @@ def test_fallback_answers_job_timing_for_the_five_card_example(client, monkeypat
     assert [entry["card_id"] for entry in result["card_interpretations"]] == draw
     assert "แน่นอนไม่ได้" in result["overall_summary"] and "สัมภาษณ์" in result["overall_summary"]
     assert "สมัคร" in result["practical_guidance"][0] and "เรซูเม่" in result["practical_guidance"][0]
-    assert "แบ่งเวลา" in result["card_connections"] and "ข้อผูกมัด" in result["overall_summary"]
+    connections = result["card_connections"]
+    assert "หางานใหม่" in connections
+    assert "การแบ่งเวลาให้หลายเรื่องพร้อมกัน" in connections and "หน้าที่ที่ต้องรับผิดชอบ" in connections
+    assert "เกณฑ์ที่ใช้ตัดสินใจ" in connections
+    assert "ความร่วมมือ" in connections and "ข้อผูกมัด" in connections
     assert "คนที่รู้จักสายงาน" in result["practical_guidance"][1]
-    assert "(ประเด็น" not in result["card_connections"]
     assert client.get(f"{path}/interpretation").json() == result
 
 
@@ -405,11 +411,14 @@ def test_the_same_question_reflects_the_cards_and_their_orientation(client, monk
     assert all("แน่นอนไม่ได้" in result["overall_summary"] for result in results)
     assert "ข้อผูกมัด" in upright["overall_summary"] and "ข้อผูกมัด" not in reversed_["overall_summary"]
     assert MEANINGS[16]["reversed_description"] in reversed_["overall_summary"]
-    assert MEANINGS[64]["reversed_description"] in reversed_["card_connections"]
-    assert MEANINGS[64]["upright_description"] not in reversed_["card_connections"]
+    assert "ยึดเกณฑ์จนปรับตัวได้ยาก" in reversed_["card_connections"]
+    assert "คลายสิ่งที่รั้งไว้" in reversed_["card_connections"]
+    assert "ข้อผูกมัด" not in reversed_["card_connections"]
+    assert "ข้อผูกมัด" in upright["card_connections"]
     assert MEANINGS[38]["reversed_description"] in reversed_["practical_guidance"][1]
     assert MEANINGS[6]["upright_description"] in different["overall_summary"]
-    assert MEANINGS[19]["upright_description"] in different["card_connections"]
+    assert "สิ่งที่ยังไม่มีคำตอบชัด" in different["card_connections"]
+    assert "แบ่งเวลา" not in different["card_connections"]
     assert MEANINGS[9]["career_meaning"] in different["practical_guidance"][1]
 
 
@@ -426,13 +435,9 @@ def test_fallback_connects_each_spread_and_uses_selected_orientation(client, mon
     assert response.is_success, response.text
     result = response.json()
     connections = result["card_connections"]
-    assert "(ประเด็น" not in connections
     assert connections != result["overall_summary"]
     guidance = result["practical_guidance"]
-    assert any(
-        MEANINGS[card["card"]["id"]]["reversed_description"] in f"{connections} {result['overall_summary']}"
-        for card in cards if card["orientation"] == "reversed"
-    )
+    assert "ความสนใจที่ถูกดึงไปหลายทาง" in connections
     for entry, card in zip(result["card_interpretations"], cards, strict=True):
         meaning = MEANINGS[card["card"]["id"]]
         selected = meaning[f"{card['orientation']}_description"]
@@ -443,6 +448,8 @@ def test_fallback_connects_each_spread_and_uses_selected_orientation(client, mon
         assert entry["position_name"] == card["position"]["meaning_th"]
         assert prose.index(selected) < prose.index(meaning["career_meaning"])
         assert other not in prose
+        assert selected not in connections
+        assert card["card"]["name_th"] not in connections
         assert all(step not in prose for step in guidance)
 
 
