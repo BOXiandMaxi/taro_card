@@ -12,6 +12,9 @@ const Draft = createContext(null)
 const Auth = createContext(null)
 const RESULT_PATH = '/result/'
 const READING_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+function InterpretationParagraphs({ text }) {
+  return text.split(/\r?\n[\t ]*\r?\n+/).filter(paragraph => paragraph.trim()).map((paragraph, index) => <p key={index}>{paragraph}</p>)
+}
 function readingResultPath(id) {
   return id?.length === 36 && READING_UUID.test(id) ? `${RESULT_PATH}${id.toLowerCase()}` : null
 }
@@ -386,7 +389,7 @@ function ReadingPage({ result = false }) {
             <Link className="button button-gold" to={authPath('/login', returnTo)}>เข้าสู่ระบบ</Link>
             <Link className="button button-outline" to={authPath('/register', returnTo)}>สมัครสมาชิก</Link>
           </div>}
-        </> : <>{interpretation && reading.interpretation_source === "database" && <p className="small-note">คำอ่านนี้สร้างจากความหมายไพ่ที่บันทึกไว้ในระบบ</p>}{interpretation?.overall_summary && <details open><summary>ภาพรวมคำทำนาย</summary><p>{interpretation.overall_summary}</p></details>}{interpretation?.practical_guidance?.length && <details open><summary>คำแนะนำที่นำไปใช้ได้</summary><ul>{interpretation.practical_guidance.map((guidance, index) => <li key={index}>{guidance}</li>)}</ul></details>}{interpretation?.card_connections && <details open><summary>บทสรุปจากไพ่ทั้งหมด</summary><p>{interpretation.card_connections}</p></details>}{!interpretation && <><p role={busy ? "status" : undefined} aria-live="polite">{busy ? 'กำลังอ่านไพ่และเรียบเรียงคำทำนาย โปรดรอสักครู่…' : 'ยังไม่มีคำทำนายสำหรับการเปิดไพ่ครั้งนี้'}</p><button className="button button-outline" disabled={busy} onClick={interpret}>{busy ? 'กำลังขอคำทำนาย…' : 'ลองขอคำทำนายอีกครั้ง'}</button>{interpretError && <p className="error-message" role="alert">ยังไม่สามารถขอคำทำนายได้ กรุณาลองอีกครั้ง</p>}</>}</>}
+        </> : <>{interpretation && reading.interpretation_source === "database" && <p className="small-note">คำอ่านเบื้องต้นจากความหมายไพ่ในระบบ อาจยังตอบคำถามเฉพาะเจาะจงได้ไม่ครบถ้วน</p>}{interpretation?.overall_summary && <details open><summary>{reading.interpretation_source === 'database' ? 'คำตอบเบื้องต้น' : 'ภาพรวมคำทำนาย'}</summary><InterpretationParagraphs text={interpretation.overall_summary} /></details>}{interpretation?.practical_guidance?.length && <details open><summary>คำแนะนำที่นำไปใช้ได้</summary><ul>{interpretation.practical_guidance.map((guidance, index) => <li key={index}>{guidance}</li>)}</ul></details>}{interpretation?.card_connections && <details open><summary>{reading.interpretation_source === 'database' ? 'แนวทางอ่านไพ่ชุดนี้ประกอบกัน' : 'บทสรุปจากไพ่ทั้งหมด'}</summary><InterpretationParagraphs text={interpretation.card_connections} /></details>}{!interpretation && <><p role={busy ? "status" : undefined} aria-live="polite">{busy ? 'กำลังอ่านไพ่และเรียบเรียงคำทำนาย โปรดรอสักครู่…' : 'ยังไม่มีคำทำนายสำหรับการเปิดไพ่ครั้งนี้'}</p><button className="button button-outline" disabled={busy} onClick={interpret}>{busy ? 'กำลังขอคำทำนาย…' : 'ลองขอคำทำนายอีกครั้ง'}</button>{interpretError && <p className="error-message" role="alert">ยังไม่สามารถขอคำทำนายได้ กรุณาลองอีกครั้ง</p>}</>}</>}
       </div> : result ? <Link className="button button-gold next-action" to={`/reveal/${encodeURIComponent(id)}`}>เปิดไพ่ที่เหลือ <ArrowRight size={16} /></Link> : cards.every(item => item.revealed) ? <Link className="button button-gold next-action" to={`/result/${encodeURIComponent(id)}`}>ดูคำทำนาย <ArrowRight size={16} /></Link> : null}
     </>}
   </Page>

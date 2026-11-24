@@ -118,11 +118,17 @@ needed for the default Render domain. For a custom domain, set
 Render domain and custom domain must work, list both origins separated by a
 comma. The server's host allowlist follows these origins.
 
-The Blueprint leaves `AI_PROVIDER=disabled`; database-based fallback readings
-remain available. To enable live AI later, configure a supported provider,
-model, API key, and request limits in **Render → service → Environment**, never
-in GitHub or a `VITE_` variable. Test one reading, its history reload, and the
-AI usage limit after enabling it.
+For an existing Blueprint, set `AI_PROVIDER=gemini`, `AI_MODEL` to a model
+available to your Gemini API project, and `GEMINI_API_KEY` in **Render →
+taro-card → Environment**. Set `AI_TIMEOUT_SECONDS=30` and
+`AI_MAX_OUTPUT_TOKENS=6000` if older values are already present there. The
+Blueprint marks the AI settings as `sync: false` so later syncs do not reset
+them; Render does not prompt for new `sync: false` variables when updating an
+existing Blueprint. Keep the key out of GitHub and frontend variables. If the
+provider is disabled, has no key, or fails, the app serves a clearly labeled
+preliminary database reading. Test a new reading and verify that it is sourced
+from AI, then reopen history to verify the result is reused without another
+provider request.
 
 ## 4. Verify and operate
 

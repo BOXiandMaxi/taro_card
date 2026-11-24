@@ -1,4 +1,3 @@
-from collections import Counter
 from dataclasses import replace
 from datetime import timedelta
 from time import sleep
@@ -41,6 +40,66 @@ CATEGORY_SUMMARIES = {
     "career": "ลองแยกเรื่องที่คุณปรับเองได้ออกจากเรื่องที่ต้องตกลงกับคนอื่น จะได้เห็นว่าควรเริ่มตรงไหน",
     "guidance": "ลองมองหาสิ่งที่เกิดซ้ำในเรื่องนี้ เพราะอาจช่วยให้เห็นว่าควรเปลี่ยนอะไรทีละอย่าง",
 }
+# Prefer a direct answer for common questions, including free-text variants.
+# Each entry gives the conclusion, what to try, and what to check afterward.
+QUESTION_ANSWERS = {
+    "daily-life": (
+        (("ใส่ใจ", "ให้ความสำคัญ"), "วันนี้ให้เริ่มจากเรื่องที่ปล่อยไว้แล้วจะทำให้เรื่องอื่นติดตามไปด้วย",
+         "เขียนสิ่งที่ต้องทำวันนี้ แล้วเลือกหนึ่งอย่างที่คนอื่นกำลังรอหรือมีเส้นตายชัด",
+         "พอทำขั้นแรกเสร็จ ดูว่างานที่เหลือเริ่มเดินต่อได้ไหม ถ้ายังติด ให้ถามคนที่ช่วยปลดจุดนั้นได้"),
+        (("ระวัง", "อุปสรรค"), "จุดที่ควรระวังคือเรื่องที่เกิดซ้ำและทำให้แผนสะดุด",
+         "เลือกเหตุการณ์ล่าสุดที่ทำให้แผนหลุด แล้วแยกว่าติดเวลา ข้อมูล หรือข้อตกลง",
+         "ลองเปลี่ยนเงื่อนไขทีละอย่าง แล้วดูว่าปัญหาเดิมเกิดน้อยลงไหม"),
+        (("เปลี่ยนแปลง",), "เริ่มเปลี่ยนจากสิ่งที่ทำซ้ำแล้วได้ผลไม่เหมือนที่ต้องการ เพราะเห็นผลของวิธีใหม่ได้ง่ายกว่า",
+         "เลือกกิจวัตรหนึ่งอย่างแล้วลองเปลี่ยนเฉพาะเวลา คนที่ช่วย หรือวิธีทำ",
+         "ผ่านไปสองหรือสามครั้ง ให้ดูว่าวิธีใหม่ช่วยลดเวลา ความเหนื่อย หรือเรื่องที่ต้องกลับมาแก้ไหม"),
+    ),
+    "finance": (
+        (("ลงทุน", "เสี่ยง"), "สิ่งสำคัญก่อนตัดสินใจคือรู้ให้ชัดว่าถ้าเรื่องไม่เป็นตามคาด คุณจะรับผลเสียได้แค่ไหน",
+         "จดค่าใช้จ่าย เงื่อนไขที่ผูกมัด และข้อมูลที่ยังไม่ได้ยืนยันจากแหล่งที่เชื่อถือได้",
+         "ถ้ายังอธิบายต้นทุนหรือผลในกรณีแย่ที่สุดไม่ได้ ให้หาข้อมูลหรือถามผู้เชี่ยวชาญก่อนตัดสินใจ"),
+        (("รายได้",), "ให้มองหาแหล่งรายได้ที่ทดลองเล็ก ๆ ได้และมีคนสนใจจริงก่อนทุ่มเวลาเพิ่ม",
+         "เลือกทางเลือกหนึ่งแล้วจดว่าต้องใช้เวลาและต้นทุนเท่าไร เทียบกับสิ่งที่คนยอมจ่ายจริง",
+         "ดูว่ามีคนสอบถามหรือซื้อซ้ำหลังทดลองไหม ใช้ข้อมูลนี้เทียบกับแรงที่ต้องลง"),
+        (("วางแผน", "อุปสรรค", "สถานการณ์"), "ให้ดูว่าเงินตึงเพราะรายจ่ายต่อเนื่องหรือเพราะวันรับเงินกับวันจ่ายไม่ตรงกัน สองอย่างนี้ต้องจัดการต่างกัน",
+         "เปิดข้อมูลเดือนล่าสุดแล้วแยกเงินเข้าจริง ค่าใช้จ่ายประจำ และค่าใช้จ่ายที่เกิดครั้งเดียว",
+         "ถ้ายอดรวมยังพอแต่เงินขาดช่วง ให้ลองทำปฏิทินวันรับและวันจ่าย ถ้ายอดรวมไม่พอ ค่อยดูว่ารายจ่ายส่วนไหนเปลี่ยนได้"),
+    ),
+    "love": (
+        (("คนโสด", "รักครั้งใหม่"), "ลองเปิดโอกาสให้คนใหม่ ๆ โดยดูว่าคุยแล้วสบายใจและต่างฝ่ายต่างเข้าหากันไหม",
+         "ถ้าอยากรู้จักใครเพิ่ม ชวนคุยเรื่องที่สนใจร่วมกันหรือนัดทำกิจกรรมสั้น ๆ",
+         "สังเกตว่าอีกฝ่ายริเริ่มคุยบ้างและเคารพเวลาหรือขอบเขตของคุณไหม"),
+        (("ปรับปรุง", "สื่อสาร", "คุย", "ความสัมพันธ์ปัจจุบัน"), "ถ้าอยากรู้ว่าความสัมพันธ์จะดีขึ้นได้ไหม เริ่มจากคุยเรื่องที่เกิดขึ้นจริงหนึ่งเรื่องและดูว่าทั้งคู่พร้อมขยับหรือเปล่า",
+         "เลือกเหตุการณ์หนึ่ง แล้วลองพูดว่า ‘ตอนเกิดเรื่องนี้เรารู้สึกแบบนี้ คราวหน้าเราลองตกลงกันใหม่ได้ไหม’",
+         "ฟังว่าอีกฝ่ายเข้าใจสิ่งที่คุณต้องการอย่างไร แล้วดูว่าข้อตกลงถูกนำไปทำจริงไหม"),
+        (("อดีต",), "บทเรียนที่ใช้ได้คือรู้ว่าความสัมพันธ์แบบไหนทำให้คุณเป็นตัวเองได้และขอบเขตไหนที่อยากรักษา",
+         "จดหนึ่งเหตุการณ์ที่รู้สึกว่าได้รับการเคารพ และอีกหนึ่งเหตุการณ์ที่ฝืนใจ",
+         "แปลงข้อสังเกตเป็นขอบเขตที่บอกอีกฝ่ายได้ แล้วดูจากการตอบรับจริง"),
+    ),
+    "career": (
+        (("อุปสรรค", "ติดขัด"), "ให้หาว่างานหยุดที่ขั้นตอนไหนก่อนแก้ เพราะเรื่องเวลา ข้อมูล และอำนาจตัดสินใจต้องแก้คนละแบบ",
+         "ไล่จากงานล่าสุดที่ค้างว่าใครต้องตอบหรือส่งอะไรเพื่อให้ไปต่อได้",
+         "เมื่อได้ข้อมูลหรือข้อตกลงแล้ว ดูว่างานเริ่มเดินหรือยังติดที่ขั้นอื่น"),
+    ),
+    "guidance": (
+        (("ปล่อยวาง",), "ลองวางความรับผิดชอบส่วนที่คุณไม่มีอำนาจกำหนดผล แล้วเก็บแรงไว้ทำส่วนที่คุณเลือกได้",
+         "จดสิ่งที่ค้างใจหนึ่งเรื่อง แล้วแยกว่าอะไรเป็นการตัดสินใจของคุณและอะไรขึ้นกับคนอื่น",
+         "กำหนดว่าคุณจะกลับมาคิดเรื่องนี้อีกเมื่อมีข้อมูลใหม่อะไร จะได้ไม่ต้องทบทวนเรื่องเดิมตลอดเวลา"),
+        (("จุดแข็ง",), "จุดแข็งที่น่าดูคือสิ่งที่คุณทำได้ดีหลายครั้ง แม้จะรู้สึกว่าเป็นเรื่องธรรมดา",
+         "นึกถึงครั้งที่คนอื่นขอให้คุณช่วย แล้วจดว่าคุณทำอะไรให้เรื่องง่ายขึ้น",
+         "ลองนำวิธีเดียวกันไปใช้กับเรื่องที่กำลังติด แล้วเทียบว่าผลดีขึ้นตรงไหน"),
+        (("มองข้าม", "บทเรียน"), "สิ่งที่น่าทบทวนคือเงื่อนไขที่ทำให้คุณเจอปัญหาเดิมแม้สถานการณ์จะเปลี่ยนไปแล้ว",
+         "เทียบเหตุการณ์สองครั้งที่ลงเอยคล้ายกัน แล้วหาว่าคุณรับปาก รอคำตอบ หรือตัดสินใจในจังหวะเดียวกันไหม",
+         "เลือกเปลี่ยนเพียงจุดเดียวในครั้งถัดไป แล้วดูว่าผลลัพธ์ต่างจากเดิมไหม"),
+    ),
+}
+CATEGORY_CHECKS = {
+    "daily-life": "หลังลองทำหนึ่งอย่าง ให้ดูว่าเวลาที่ใช้หรือเรื่องที่ค้างลดลงจริงไหม",
+    "finance": "ก่อนตัดสินใจ ให้เทียบตัวเลขจากหลักฐานที่มีจริงกับยอดที่คุณคาดไว้ แล้วหาที่มาของส่วนต่าง",
+    "love": "หลังพูดคุย ให้ดูว่าต่างฝ่ายเข้าใจตรงกันและทำตามที่คุยกันได้แค่ไหน",
+    "career": "รอบถัดไปให้วัดจากสิ่งที่เปลี่ยนจริง เช่น งานค้างลดลง ได้คำตอบ หรือนัดคุยเกิดขึ้น",
+    "guidance": "ลองวิธีนี้กับสถานการณ์หนึ่งครั้ง แล้วดูว่าอะไรเปลี่ยนก่อนตัดสินใจว่าจะใช้ต่อไหม",
+}
 CAREER_QUESTION_GUIDANCE = (
     ("เปลี่ยนงาน", "ถ้ากำลังชั่งใจว่าจะเปลี่ยนงานไหม ให้เริ่มจากดูว่างานใหม่แก้ปัญหาที่อยากออกจากงานเดิมได้จริงหรือเปล่า",
      "เทียบงานปัจจุบันกับงานที่สนใจในเรื่องหน้าที่ เวลา และรายได้ แล้วตรวจข้อมูลที่ยังไม่ชัด"),
@@ -52,35 +111,6 @@ CAREER_QUESTION_GUIDANCE = (
 TIMING_CUES = ("เมื่อไร", "เมื่อไหร่", "ตอนไหน", "ช่วงไหน", "เดือนไหน", "นานแค่ไหน", "อีกนานไหม", "กี่วัน", "กี่เดือน", "กี่ปี")
 JOB_SEARCH_CUES = ("งานใหม่", "สมัครงาน", "หางาน", "สัมภาษณ์งาน", "เปลี่ยนงาน")
 JOB_OFFER_CUES = ("ได้งาน", "จะได้เริ่มงาน", "ข้อเสนองาน", "ผลสัมภาษณ์")
-PLAIN_TOPICS = {
-    "หมุนหลายอย่าง": "การแบ่งเวลาให้หลายเรื่องพร้อมกัน",
-    "โครงสร้าง": "กติกาและหน้าที่ที่ต้องรับผิดชอบ",
-    "เหตุผล": "เกณฑ์ที่ใช้ตัดสินใจ",
-    "แลกเปลี่ยน": "ความร่วมมือที่ดีต่อทั้งสองฝ่าย",
-    "พันธนาการ": "ข้อผูกมัดที่ทำให้ขยับตัวลำบาก",
-}
-SYNTHESIS_TOPICS = {
-    **PLAIN_TOPICS,
-    "หลักการ": "การตั้งเกณฑ์ให้ชัด",
-    "แข็งกร้าว": "การยึดเกณฑ์จนปรับตัวได้ยาก",
-    "เย็นชา": "การมองข้ามมุมของคนอื่น",
-    "หลุดพ้น": "การค่อย ๆ คลายสิ่งที่รั้งไว้",
-    "เข้าใจคลาด": "ความเข้าใจที่ยังไม่ตรงกัน",
-    "เริ่มต้น": "การลองทางใหม่",
-    "หุนหัน": "ความรีบจนเตรียมตัวไม่ทัน",
-    "ลงมือทำ": "การใช้สิ่งที่มีให้เกิดผล",
-    "กระจัดกระจาย": "ความสนใจที่ถูกดึงไปหลายทาง",
-    "สัญชาตญาณ": "สิ่งที่ยังไม่มีคำตอบชัด",
-    "คลุมเครือ": "สิ่งที่ยังไม่มีคำตอบชัด",
-    "สับสน": "ความกังวลที่ทำให้มองสถานการณ์ไม่ชัด",
-    "พักฟื้น": "การพักให้พอแล้วค่อยกลับมาลงมือ",
-    "หวัง": "การค่อย ๆ กลับมามีแรง",
-    "ขอความช่วยเหลือ": "การขอแรงจากคนอื่น",
-    "ร่วมมือ": "การขอแรงจากคนอื่น",
-    "ยุติธรรม": "การดูข้อมูลจากทั้งสองฝ่าย",
-    "ลำเอียง": "การให้น้ำหนักกับข้อมูลบางด้านมากเกินไป",
-    "คำสอน": "ข้อแนะนำจากคนที่มีประสบการณ์",
-}
 SYNTHESIS_QUESTIONS = {
     "daily-life": "เรื่องที่คุณกำลังเจอวันนี้",
     "finance": "การตัดสินใจเรื่องเงิน",
@@ -171,7 +201,8 @@ def _answer_question(payload: InterpretationInput) -> tuple[str, list[str]]:
             return (
                 "ไพ่บอกวันได้งานใหม่แน่นอนไม่ได้ ให้ดูความคืบหน้าจากสัญญาณจริง เช่น เจอประกาศงานที่ตรงกับคุณ "
                 "มีบริษัทติดต่อกลับ หรือได้รับนัดสัมภาษณ์",
-                ["เลือกประกาศงานที่อยากสมัครหนึ่งตำแหน่ง แล้วปรับเรซูเม่ให้เห็นผลงานที่ตรงกับหน้าที่ในประกาศ"],
+                ["เลือกประกาศงานที่อยากสมัครหนึ่งตำแหน่ง แล้วปรับเรซูเม่ให้เห็นผลงานที่ตรงกับหน้าที่ในประกาศ",
+                 "จดวันส่งใบสมัครและผลตอบกลับ ถ้าส่งหลายตำแหน่งแล้วยังไม่ถูกเรียก ให้เทียบหน้าที่ในประกาศกับผลงานที่ใส่ไว้ แล้วปรับส่วนที่ยังไม่ตรง"],
             )
         if timing and "เปลี่ยนงาน" in question:
             return (
@@ -196,60 +227,24 @@ def _answer_question(payload: InterpretationInput) -> tuple[str, list[str]]:
     ):
         return (
             "ไพ่บอกแทนเขาไม่ได้ว่าเขาคิดหรือรู้สึกยังไง ลองดูว่าที่เขาพูดและทำสอดคล้องกันแค่ไหน",
-            ["ถ้าอยากคุยให้ชัด ลองถามว่า ‘ช่วงนี้เธอมองความสัมพันธ์ของเรายังไงบ้าง’ แล้วให้เวลาเขาตอบ"],
+            ["ถ้าอยากคุยให้ชัด ลองถามว่า ‘ช่วงนี้เธอมองความสัมพันธ์ของเรายังไงบ้าง’ แล้วให้เวลาเขาตอบ",
+             "ดูว่าอีกฝ่ายให้เวลา รักษาคำพูด และริเริ่มติดต่ออย่างสม่ำเสมอไหม เทียบกับสิ่งที่เขาบอกในบทสนทนา"],
         )
+    for cues, summary, action, check in QUESTION_ANSWERS[payload.category]:
+        if any(cue in question for cue in cues):
+            if timing:
+                summary = f"ไพ่ระบุวันหรือช่วงเวลาที่แน่นอนไม่ได้ {summary}"
+            return summary, [action, check]
     summary = CATEGORY_SUMMARIES[payload.category]
     if timing:
         summary = f"ไพ่ระบุวันหรือช่วงเวลาที่แน่นอนไม่ได้ {summary}"
     return summary, [CATEGORY_ACTIONS[payload.category]]
 
 
-def _card_observation(card: FixedCard) -> str | None:
-    if card.orientation_meaning:
-        return _excerpt(card.orientation_meaning, 150)
-    if card.keywords:
-        return f"คำสำคัญของไพ่{card.name_th}คือ ‘{card.keywords[0]}’"
-    return None
-
-
-def _card_topic(card: FixedCard) -> str | None:
-    return next((PLAIN_TOPICS[keyword] for keyword in card.keywords if keyword in PLAIN_TOPICS), None)
-
-
-def _card_summary(payload: InterpretationInput) -> str | None:
-    # The short answer adds one takeaway. The longer synthesis covers the other positions.
-    card = payload.cards[1] if payload.card_count == 3 else payload.cards[-1]
-    role = {3: "อุปสรรค", 5: "คำแนะนำ", 10: "ทิศทางที่เป็นไปได้"}[payload.card_count]
-    topic = _card_topic(card)
-    if topic:
-        return f"ไพ่{card.name_th}ในตำแหน่ง{role}ชวนให้ดูว่า{topic}มีผลกับเรื่องนี้ไหม"
-    observation = _card_observation(card)
-    if observation:
-        return f"ลองดูมุม{role}จากไพ่{card.name_th}ประกอบ {observation}"
-    return None
-
-
-def _card_action(payload: InterpretationInput) -> str | None:
-    # Choose the actionable role, rather than reusing the card highlighted in the short answer.
-    card = payload.cards[{3: 2, 5: 3, 10: 6}[payload.card_count]]
-    if (payload.category == "career" and card.orientation == "upright" and "แลกเปลี่ยน" in card.keywords
-            and any(cue in payload.question for cue in JOB_SEARCH_CUES)):
-        return f"ตามแนวของไพ่{card.name_th} ลองให้คนที่รู้จักสายงานอ่านเรซูเม่ แล้วถามว่าผลงานข้อไหนตรงกับประกาศที่สุด"
-    if card.orientation == "upright" and card.category_meaning:
-        return f"ถ้าเข้ากับสถานการณ์ของคุณ {_excerpt(card.category_meaning, 180)} ตามแนวของไพ่{card.name_th}"
-    topic = _card_topic(card)
-    if topic:
-        return f"ลองนึกถึงเหตุการณ์จริงที่เกี่ยวกับ{topic} แล้วดูว่ามีส่วนไหนที่คุณปรับได้หนึ่งอย่าง"
-    observation = _card_observation(card)
-    if observation:
-        return f"จดเหตุการณ์ที่เกี่ยวกับคำถามหนึ่งครั้ง แล้วดูว่าตรงกับข้อสังเกตจากไพ่{card.name_th}ไหม — {observation}"
-    return None
-
-
-def _synthesis_question(payload: InterpretationInput) -> str:
+def _focus(payload: InterpretationInput) -> str:
     question = "".join(payload.question.split())
     if payload.category == "career":
-        if any(cue in question for cue in TIMING_CUES) and any(cue in question for cue in JOB_OFFER_CUES):
+        if any(cue in question for cue in JOB_OFFER_CUES):
             return "การหางานใหม่"
         if "เปลี่ยนงาน" in question:
             return "การย้ายงาน"
@@ -262,49 +257,50 @@ def _synthesis_question(payload: InterpretationInput) -> str:
     return SYNTHESIS_QUESTIONS[payload.category]
 
 
-def _synthesis_topic(*cards: FixedCard, default: str) -> str:
-    # Use orientation-specific keywords. For a group of positions, a shared idea
-    # takes precedence over a single observation, keeping long spreads readable.
-    topics = [
-        next((SYNTHESIS_TOPICS[word] for word in card.keywords if word in SYNTHESIS_TOPICS),
-             next((word for word in card.keywords if len(word) <= 32), None))
-        for card in cards
-    ]
-    matches = Counter(topic for topic in topics if topic)
-    return matches.most_common(1)[0][0] if matches else default
+def _summary_reference(payload: InterpretationInput) -> str | None:
+    obstacle = payload.cards[2 if payload.card_count == 5 else 1]
+    meaning = obstacle.orientation_meaning
+    if not meaning or len(meaning) > 220:
+        return None
+    return (
+        f"ถ้าจะใช้ไพ่ช่วยทบทวน ให้เริ่มจากไพ่{obstacle.name_th}ในตำแหน่งอุปสรรค "
+        f"ความหมายที่บันทึกไว้คือ «{meaning}» ใช้เป็นข้อสังเกตเพื่อเทียบกับเหตุการณ์จริง"
+    )
 
 
-def _connect_cards(payload: InterpretationInput) -> str:
-    focus = _synthesis_question(payload)
+def _card_action(payload: InterpretationInput) -> str | None:
+    card = payload.cards[{3: 2, 5: 3, 10: 7}[payload.card_count]]
+    question = "".join(payload.question.split())
+    if payload.category == "career" and any(cue in question for cue in (*JOB_SEARCH_CUES, *JOB_OFFER_CUES)):
+        if "แลกเปลี่ยน" in card.keywords:
+            return "ส่งประกาศกับเรซูเม่ให้คนที่รู้จักสายงานช่วยอ่าน แล้วถามว่าผลงานข้อไหนทำให้เห็นชัดว่าคุณทำงานนี้ได้"
+        if "เข้าใจคลาด" in card.keywords:
+            return "ถ้าหน้าที่ในประกาศตีความได้หลายแบบ ให้ถามผู้ติดต่อว่าในสามเดือนแรกวัดผลงานจากอะไร แล้วเช็กว่าตรงกับงานที่คุณหาอยู่ไหม"
+    return None
+
+
+def _spread_guide(payload: InterpretationInput) -> str:
+    focus = _focus(payload)
     if payload.card_count == 3:
-        situation, obstacle, advice = payload.cards
-        current = _synthesis_topic(situation, default="สิ่งที่กำลังเกิดขึ้น")
-        friction = _synthesis_topic(obstacle, default="จุดที่ยังติดขัด")
-        opening = _synthesis_topic(advice, default="ทางเลือกที่พอทำได้")
         return (
-            f"สำหรับ{focus} ไพ่ทั้งสามใบสะท้อนว่า{current}กำลังเจอกับ{friction} "
-            f"ทางที่ไพ่แนะนำคือ{opening} ลองดูว่ามันช่วยให้เรื่องที่ติดอยู่ขยับได้จริงแค่ไหน"
+            f"เวลาอ่านไพ่ชุดนี้ประกอบ{focus} ให้เทียบสองใบแรกกับเหตุการณ์จริงก่อน "
+            "ใบแรกใช้ดูว่าเกิดอะไรขึ้น ส่วนใบที่สองใช้ถามว่าอะไรทำให้เรื่องไปต่อได้ยาก "
+            "ถ้าเห็นจุดที่ติดแล้ว ค่อยดูว่าคำแนะนำในใบสุดท้ายช่วยคลายจุดนั้นได้จริงไหม"
         )
     if payload.card_count == 5:
-        situation, root, obstacle, resource, advice = payload.cards
-        current = _synthesis_topic(situation, default="เรื่องที่รับมืออยู่")
-        cause = _synthesis_topic(root, default="เงื่อนไขเดิม")
-        friction = _synthesis_topic(obstacle, default="สิ่งที่ทำให้ยังตัดสินใจไม่ได้")
-        support = _synthesis_topic(resource, default="สิ่งที่คุณพอใช้เป็นแรงช่วยได้")
-        opening = _synthesis_topic(advice, default="ทางเลือกที่พอทำได้")
         return (
-            f"สำหรับ{focus} ไพ่ชี้ว่า{current}ไม่ได้เกิดขึ้นลอย ๆ แต่มี{cause}อยู่เบื้องหลัง "
-            f"เมื่อเจอ{friction}จึงยิ่งไปต่อยากขึ้น {support}อาจช่วยให้คุณพิจารณา{opening}ได้ชัดกว่าเดิม"
+            f"เวลาใช้ไพ่ชุดนี้ทบทวน{focus} ให้แยกสิ่งที่เห็นตอนนี้ออกจากสาเหตุเดิมและเรื่องที่กำลังขวาง "
+            "ถ้าสิ่งที่ขวางเกิดขึ้นซ้ำ ให้ดูว่าการแก้แค่ปัญหาเฉพาะหน้าจะช่วยได้แค่ไหน\n\n"
+            "สองใบสุดท้ายช่วยให้คิดถึงตัวช่วยที่มีและทางเลือกที่ใช้ได้จริง "
+            "ให้พิจารณาว่าทางเลือกนั้นแตะสาเหตุเดิมได้ไหม และคุณมีเวลา แรง หรือคนช่วยพอจะทำต่อหรือเปล่า"
         )
-    situation, crossing, goal, root, past, near_future, self_view, environment, hopes, direction = payload.cards
-    pressure = _synthesis_topic(crossing, situation, root, past, default="เงื่อนไขที่ยังติดอยู่")
-    priority = _synthesis_topic(goal, hopes, default="สิ่งที่อยากให้เปลี่ยน")
-    support = _synthesis_topic(environment, self_view, default="สิ่งที่คุณปรับหรือขอความช่วยเหลือได้")
-    opening = _synthesis_topic(direction, near_future, default="ทางที่ลองเดินต่อได้")
     return (
-        f"สำหรับ{focus} ไพ่หลายตำแหน่งสะท้อนว่า{pressure}กำลังชนกับ{priority} "
-        f"ถ้าอยากขยับจากจุดนี้ ลองดูว่า{support}ช่วยลดแรงกดนั้นได้ไหม "
-        f"และ{opening}ยังเป็นทางที่เหมาะกับสถานการณ์จริงหรือเปล่า"
+        f"สำหรับ{focus} ให้เริ่มจากสถานการณ์และอุปสรรค แล้วใช้ไพ่รากฐานกับเหตุการณ์ก่อนหน้าช่วยตั้งคำถามว่า"
+        "มีเรื่องอะไรที่เกิดซ้ำ จากนั้นเทียบกับเป้าหมายเพื่อดูว่าสิ่งที่อยากให้เกิดสอดคล้องกับสภาพตอนนี้แค่ไหน\n\n"
+        "จากนั้นให้แยกสิ่งที่คุณปรับเองได้ออกจากเงื่อนไขรอบตัว "
+        "ความหวังและความกลัวช่วยบอกได้ว่าคุณให้ความสำคัญกับอะไร "
+        "ส่วนไพ่ระยะใกล้และไพ่ทิศทางใช้ดูว่าเงื่อนไขอะไรต้องเปลี่ยนก่อนจึงจะเห็นความคืบหน้า "
+        "ให้เทียบกับสัญญาณที่เกิดขึ้นจริงก่อนตัดสินใจ"
     )
 
 
@@ -327,16 +323,19 @@ def database_interpretation(payload: InterpretationInput) -> InterpretationResul
             interpretation=" ".join(parts),
         ))
 
-    summary, guidance = _answer_question(payload)
-    if takeaway := _card_summary(payload):
-        summary = f"{summary} {takeaway}"
+    summary, steps = _answer_question(payload)
+    first_step, *remaining_steps = steps
+    guidance = [first_step]
     if action := _card_action(payload):
         guidance.append(action)
+    guidance.extend(remaining_steps or [CATEGORY_CHECKS[payload.category]])
+    if reference := _summary_reference(payload):
+        summary = f"{summary}\n\n{reference}"
     return InterpretationResult(
         reading_id=payload.reading_id, language="th",
         overall_summary=summary,
         card_interpretations=card_interpretations,
-        card_connections=_connect_cards(payload),
+        card_connections=_spread_guide(payload),
         practical_guidance=guidance,
         closing_message="เก็บส่วนที่ตรงกับชีวิตจริงไว้ใช้ และวางส่วนที่ไม่ตรงไว้ก่อน",
     )

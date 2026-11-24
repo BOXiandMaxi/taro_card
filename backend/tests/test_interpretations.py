@@ -175,7 +175,7 @@ def test_gemini_mock_reading_preserves_draw_and_cache(client, database, monkeypa
         body = json.loads(request.content)
         assert body["generationConfig"]["responseMimeType"] == "application/json"
         assert body["generationConfig"]["responseJsonSchema"]["additionalProperties"] is False
-        assert body["generationConfig"]["maxOutputTokens"] == 4000
+        assert body["generationConfig"]["maxOutputTokens"] == 6000
         assert "Use only the given cards in order" in body["systemInstruction"]["parts"][0]["text"]
         payload = json.loads(body["contents"][0]["parts"][0]["text"])
         assert payload["card_count"] == count
@@ -380,11 +380,10 @@ def test_fallback_answers_job_timing_for_the_five_card_example(client, monkeypat
     assert "แน่นอนไม่ได้" in result["overall_summary"] and "สัมภาษณ์" in result["overall_summary"]
     assert "สมัคร" in result["practical_guidance"][0] and "เรซูเม่" in result["practical_guidance"][0]
     connections = result["card_connections"]
-    assert "หางานใหม่" in connections
-    assert "การแบ่งเวลาให้หลายเรื่องพร้อมกัน" in connections and "หน้าที่ที่ต้องรับผิดชอบ" in connections
-    assert "เกณฑ์ที่ใช้ตัดสินใจ" in connections
-    assert "ความร่วมมือ" in connections and "ข้อผูกมัด" in connections
+    assert "สาเหตุเดิม" in connections and "ตัวช่วยที่มี" in connections
+    assert MEANINGS[64]["upright_description"] in result["overall_summary"]
     assert "คนที่รู้จักสายงาน" in result["practical_guidance"][1]
+    assert any("ผลตอบกลับ" in step for step in result["practical_guidance"])
     assert client.get(f"{path}/interpretation").json() == result
 
 
@@ -395,7 +394,7 @@ def test_the_same_question_reflects_the_cards_and_their_orientation(client, monk
 
     results = []
     for draw, reversed_cards in (([66, 5, 64, 38, 16], set()), ([66, 5, 64, 38, 16], {3, 4, 5}),
-                                 ([3, 12, 19, 9, 6], set())):
+                                 ([3, 12, 19, 9, 6], set()), ([66, 5, 38, 64, 16], set())):
         deck = draw + [card_id for card_id in range(1, 79) if card_id not in draw]
         monkeypatch.setattr(readings, "_shuffled_deck", lambda _: deck)
         flags = iter(int(position in reversed_cards) for position in range(1, 6))
@@ -407,23 +406,34 @@ def test_the_same_question_reflects_the_cards_and_their_orientation(client, monk
         assert response.is_success, response.text
         results.append(response.json())
 
-    upright, reversed_, different = results
+    upright, reversed_, different, swapped = results
     assert all("แน่นอนไม่ได้" in result["overall_summary"] for result in results)
-    assert "ข้อผูกมัด" in upright["overall_summary"] and "ข้อผูกมัด" not in reversed_["overall_summary"]
-    assert MEANINGS[16]["reversed_description"] in reversed_["overall_summary"]
-    assert "ยึดเกณฑ์จนปรับตัวได้ยาก" in reversed_["card_connections"]
-    assert "คลายสิ่งที่รั้งไว้" in reversed_["card_connections"]
-    assert "ข้อผูกมัด" not in reversed_["card_connections"]
-    assert "ข้อผูกมัด" in upright["card_connections"]
-    assert MEANINGS[38]["reversed_description"] in reversed_["practical_guidance"][1]
-    assert MEANINGS[6]["upright_description"] in different["overall_summary"]
-    assert "สิ่งที่ยังไม่มีคำตอบชัด" in different["card_connections"]
-    assert "แบ่งเวลา" not in different["card_connections"]
-    assert MEANINGS[9]["career_meaning"] in different["practical_guidance"][1]
+    assert MEANINGS[64]["upright_description"] in upright["overall_summary"]
+    assert MEANINGS[64]["reversed_description"] in reversed_["overall_summary"]
+    assert MEANINGS[64]["upright_description"] not in reversed_["overall_summary"]
+    assert "ถามผู้ติดต่อว่า" in reversed_["practical_guidance"][1]
+    assert MEANINGS[19]["upright_description"] in different["overall_summary"]
+    assert MEANINGS[38]["upright_description"] in swapped["overall_summary"]
+    assert all("คนที่รู้จักสายงาน" not in step for step in swapped["practical_guidance"])
 
 
-@pytest.mark.parametrize("spread", [1, 2, 3])
-def test_fallback_connects_each_spread_and_uses_selected_orientation(client, monkeypatch, spread):
+def test_fallback_answers_private_feelings_with_observable_behaviors(client, monkeypatch):
+    monkeypatch.setattr(readings, "get_provider", lambda _: None)
+    reading = create(client, {"category_id": 3, "spread_id": 1, "question_id": 31}).json()
+    path = f"{ROOT}/{reading['id']}"
+    draw_and_reveal(client, path, 3)
+    response = client.post(f"{path}/interpret")
+    assert response.is_success, response.text
+    result = response.json()
+    assert result["overall_summary"].startswith("ไพ่บอกแทนเขาไม่ได้")
+    assert any("มองความสัมพันธ์ของเรายังไง" in step for step in result["practical_guidance"])
+    assert any("รักษาคำพูด" in step for step in result["practical_guidance"])
+
+
+@pytest.mark.parametrize("spread, guide_topic", [
+    (1, "สองใบแรก"), (2, "สาเหตุเดิม"), (3, "ความหวังและความกลัว"),
+])
+def test_fallback_explains_spread_and_uses_selected_orientation(client, monkeypatch, spread, guide_topic):
     monkeypatch.setattr(readings, "get_provider", lambda _: None)
     monkeypatch.setattr(readings, "_shuffled_deck", lambda _: list(range(1, 79)))
     path, count = begin_reading(client, category=4, spread=spread)
@@ -437,7 +447,8 @@ def test_fallback_connects_each_spread_and_uses_selected_orientation(client, mon
     connections = result["card_connections"]
     assert connections != result["overall_summary"]
     guidance = result["practical_guidance"]
-    assert "ความสนใจที่ถูกดึงไปหลายทาง" in connections
+    assert guide_topic in connections
+    assert 2 <= len(guidance) <= 3
     for entry, card in zip(result["card_interpretations"], cards, strict=True):
         meaning = MEANINGS[card["card"]["id"]]
         selected = meaning[f"{card['orientation']}_description"]

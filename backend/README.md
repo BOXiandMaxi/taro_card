@@ -81,8 +81,8 @@ are excluded and AI usage rows are detached. See the
 | `AI_MODEL` | `gpt-6.1-terra` | Set `gemini-3.5-flash-lite` when using Gemini Free tier. |
 | `AI_API_KEY` | Empty | Server-side OpenAI API key. |
 | `GEMINI_API_KEY` | Empty | Server-side Gemini API key. A missing key uses the database fallback. |
-| `AI_TIMEOUT_SECONDS` | `15` | Deadline per attempt, up to 30 seconds. |
-| `AI_MAX_OUTPUT_TOKENS` | `4000` | Provider output token cap. Increase for long 10-card readings if needed. |
+| `AI_TIMEOUT_SECONDS` | `30` | Deadline per attempt, up to 30 seconds. |
+| `AI_MAX_OUTPUT_TOKENS` | `6000` | Provider output token cap for longer readings. |
 | `AI_DAILY_REQUEST_LIMIT` | `100` | Shared attempt budget per UTC day. Set to zero for database-only interpretation. |
 | `AI_ACCOUNT_DAILY_REQUEST_LIMIT` | `20` | Attempt budget per member account per UTC day. |
 | `AI_INPUT_USD_PER_MILLION`, `AI_OUTPUT_USD_PER_MILLION` | Unset | Optional price overrides. Set both when configuring a different model. |
