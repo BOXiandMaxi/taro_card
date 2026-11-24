@@ -23,7 +23,7 @@
 | --- | --- |
 | หน้าแรก | ✧ รอเพิ่มภาพ `docs/screenshots/home.webp` |
 | เลือกและเปิดไพ่ | ✧ รอเพิ่มภาพ `docs/screenshots/reading.webp` |
-| หน้าสถิติสำหรับผู้ดูแล | ✧ รอเพิ่มภาพ `docs/screenshots/analytics.webp` |
+| หน้าผลคำทำนาย | ✧ รอเพิ่มภาพ `docs/screenshots/result.webp` |
 
 เมื่อมีภาพ ให้เพิ่มไฟล์ใน [โฟลเดอร์ภาพหน้าจอ](docs/screenshots/) ตามชื่อข้างต้น แล้วแทนข้อความในตารางด้วย Markdown เช่น `![หน้าแรก](docs/screenshots/home.webp)`
 
