@@ -1,9 +1,9 @@
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from uuid import uuid4
 
 from sqlalchemy import (
-    JSON, CheckConstraint, DateTime, ForeignKey, Index, Integer, Numeric,
+    JSON, Boolean, CheckConstraint, Date, DateTime, ForeignKey, Index, Integer, Numeric,
     String, Text, UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -17,6 +17,18 @@ class User(Timestamps, Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(String(254), unique=True)
     password_hash: Mapped[str] = mapped_column(String(255))
+    role: Mapped[str | None] = mapped_column(String(16))
+
+
+class AnalyticsPageView(Base):
+    __tablename__ = "analytics_page_views"
+
+    event_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    report_day: Mapped[date] = mapped_column(Date, index=True)
+    route_key: Mapped[str] = mapped_column(String(16))
+    browser_hash: Mapped[str] = mapped_column(String(64))
+    signed_in: Mapped[bool] = mapped_column(Boolean)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
 
 
 class AuthSession(Base):

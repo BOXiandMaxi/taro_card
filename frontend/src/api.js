@@ -52,6 +52,14 @@ export async function logout() {
 export async function getCurrentUser() {
   return (await api.get('/auth/me')).data
 }
+
+export async function recordPageView(eventId, routeKey) {
+  await api.post('/analytics/page-view', { event_id: eventId, route_key: routeKey })
+}
+
+export async function getAnalytics(days) {
+  return (await api.get('/admin/analytics', { params: { days } })).data
+}
 export async function deleteReading(id) {
   await api.delete(`/readings/${encodeURIComponent(id)}`)
 }

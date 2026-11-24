@@ -37,6 +37,14 @@ def accounts_migration():
     return module
 
 
+def analytics_migration():
+    path = Path(__file__).resolve().parents[1] / "alembic/versions/0005_visitor_analytics.py"
+    spec = importlib.util.spec_from_file_location("analytics_schema", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 class DatabaseTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -69,6 +77,7 @@ class DatabaseTests(unittest.TestCase):
                 image_filename_migration().upgrade()
                 reading_engine_migration().upgrade()
                 accounts_migration().upgrade()
+                analytics_migration().upgrade()
         self.addCleanup(self.engine.dispose)
 
     def seed(self):
@@ -89,7 +98,7 @@ class DatabaseTests(unittest.TestCase):
         from alembic.autogenerate import compare_metadata
         from alembic.migration import MigrationContext
 
-        self.assertEqual(len(inspect(self.engine).get_table_names()), 14)
+        self.assertEqual(len(inspect(self.engine).get_table_names()), 15)
         with self.engine.connect() as connection:
             diff = compare_metadata(MigrationContext.configure(connection), self.base.metadata)
         self.assertEqual(diff, [])
@@ -105,8 +114,11 @@ class DatabaseTests(unittest.TestCase):
         with Operations.context(context):
             initial_migration().upgrade()
             accounts_migration().upgrade()
+            analytics_migration().upgrade()
         sql = output.getvalue()
-        self.assertEqual(sql.count("CREATE TABLE"), 14)
+        self.assertEqual(sql.count("CREATE TABLE"), 15)
+        self.assertIn("ALTER TABLE users ADD COLUMN", sql)
+        self.assertIn("CREATE TABLE analytics_page_views", sql)
         self.assertIn("utf8mb4", sql)
         self.assertIn("ON DELETE CASCADE", sql)
         self.assertIn("ON DELETE RESTRICT", sql)

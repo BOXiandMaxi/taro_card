@@ -63,7 +63,7 @@ schema dump or reset the database. Pause application writes before migrating.
 
 From `backend/`, review `python -m alembic upgrade head --sql`, then run
 `python -m alembic upgrade head`. Confirm `python -m alembic current` reports
-`0004_accounts (head)`. From the repository root, run
+`0005_visitor_analytics (head)`. From the repository root, run
 `python -m database.seeds.seed --check-only`, then
 `python -m database.seeds.seed` to add/update reference data. Run
 `python -m database.assets.validate` to check all 78 files, provenance and live

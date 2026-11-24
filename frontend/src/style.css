@@ -166,3 +166,29 @@ button{font:inherit;cursor:pointer}button:focus-visible,summary:focus-visible{ou
 @media(prefers-reduced-motion:reduce){
   .deck-stack.shuffle-deck.is-shuffling img,.deck-selection[data-phase="dealing"] .wheel-card{animation:none}
 }
+
+/* Owner analytics */
+.analytics-period{display:flex;gap:8px;flex-wrap:wrap;margin-top:30px}
+.analytics-period button{min-height:44px;padding:8px 18px;background:#fffefa;border:1px solid #b4a8bb;border-radius:4px;color:#493c5d;font-weight:700}
+.analytics-period button[aria-pressed="true"]{background:#51435f;color:#fff;border-color:#51435f}
+.analytics-report{margin-top:24px}
+.analytics-totals{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.analytics-totals>div{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;padding:20px;background:#fffefa;border:1px solid #e1ddd4;border-radius:4px}
+.analytics-totals span{flex-basis:100%;font-size:14px;color:#615e6c}
+.analytics-totals strong{font-size:30px;color:#312a40;line-height:1.35}
+.analytics-totals small,.analytics-note{font-size:13px;color:#615e6c}
+.analytics-note{line-height:1.7;margin:14px 0}
+.analytics-breakdown{font-size:14px;color:#51435f}
+.analytics-section{margin-top:32px}
+.analytics-section h2{font-size:19px;margin:0 0 14px}
+.analytics-section>p{color:#615e6c}
+.analytics-table-wrap{overflow-x:auto;border:1px solid #e1ddd4;background:#fffefa}
+.analytics-table-wrap table{width:100%;border-collapse:collapse;text-align:left;font-size:14px}
+.analytics-table-wrap th,.analytics-table-wrap td{padding:12px 14px;border-bottom:1px solid #eee9df}
+.analytics-table-wrap thead th{background:#f0ede5;color:#51435f;white-space:nowrap}
+.analytics-table-wrap tbody tr:last-child>*{border-bottom:0}
+.analytics-table-wrap tbody th{font-weight:500;white-space:nowrap}
+.analytics-pages{list-style:none;padding:0;margin:0;border-top:1px solid #dedbd4}
+.analytics-pages li{display:flex;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid #dedbd4;font-size:14px}
+.analytics-pages strong{white-space:nowrap}
+@media(max-width:500px){.analytics-totals{grid-template-columns:1fr}.analytics-totals>div{padding:16px}.analytics-table-wrap th,.analytics-table-wrap td{padding:10px}.analytics-table-wrap table{font-size:13px}}

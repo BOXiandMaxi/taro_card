@@ -48,13 +48,52 @@ backend\.venv\Scripts\python.exe -m database.seeds.seed
 backend\.venv\Scripts\python.exe -m database.assets.validate
 ```
 
-`alembic current` should report `0004_accounts (head)`. The seed should report
+`alembic current` should report `0005_visitor_analytics (head)`. The seed should report
 78 cards and 78 meanings. Existing local MariaDB accounts and reading history
 are **not** copied by the seed; a separate data migration would be needed if
 you want to retain them. Remove the terminal variable when finished:
 
 ```powershell
 Remove-Item Env:DATABASE_URL
+```
+
+### Add or remove an analytics administrator
+
+For an existing TiDB or local MariaDB database, run `alembic upgrade head`
+using that database's migration credentials before deploying the app update.
+Revision `0005_visitor_analytics` adds a nullable `users.role` column and an
+`analytics_page_views` table. It preserves all existing users and readings.
+Use Alembic to apply the schema revision instead of duplicating the DDL in the
+SQL editor. The runtime account needs its usual read/write access on both
+tables.
+
+Register your account on the site you intend to administer. In the TiDB SQL
+editor or local database client, select the app database and look up the exact
+email. Replace the example email and numeric ID below with your own values.
+
+```sql
+USE tarot_reading;
+SELECT id, email, role FROM users WHERE email = 'owner@example.com';
+
+UPDATE users SET role = 'admin'
+WHERE id = 123 AND email = 'owner@example.com';
+
+SELECT id, email, role FROM users
+WHERE id = 123 AND email = 'owner@example.com';
+```
+
+Refresh the signed-in site and open **Account → สถิติเข้าชม** or
+`/admin/analytics`. Every report request checks the current role in the
+database. To remove access, repeat the same exact update with `SET role = NULL`.
+
+The app prunes events outside the latest 30 Thai calendar days in bounded
+batches as visits arrive. For maintenance when the app is idle, use this from
+`backend/` with the intended database URL:
+
+```powershell
+./.venv/Scripts/python.exe -m app.cleanup_analytics
+# Review the count before removing the expired analytics rows.
+./.venv/Scripts/python.exe -m app.cleanup_analytics --apply
 ```
 
 ## 3. Create the Render service

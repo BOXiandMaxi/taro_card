@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Link, Navigate, NavLink, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, ArrowRight, CircleHelp, History as HistoryIcon, MoonStar, RefreshCw, Sparkles } from 'lucide-react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { getCategories, getQuestions, getSpreads, createReading, drawReading, revealReading, getReading, getHistory, interpretReading, register, login, logout, getCurrentUser, deleteReading } from './api'
+import { getCategories, getQuestions, getSpreads, createReading, drawReading, revealReading, getReading, getHistory, interpretReading, register, login, logout, getCurrentUser, deleteReading, recordPageView, getAnalytics } from './api'
 import { guestReadingIds, rememberGuestReading, forgetGuestReading } from './guestHistory'
 import './style.css'
 
@@ -399,7 +399,7 @@ function AuthForm({ mode }) {
 function Account() {
   const { user, setIdentity } = useContext(Auth); const [busy, setBusy] = useState(false); const [error, setError] = useState(false); const navigate = useNavigate()
   async function signOut() { setBusy(true); setError(false); try { await logout(); setIdentity(null); navigate('/') } catch { setError(true) } finally { setBusy(false) } }
-  return <Page kicker="ACCOUNT" title="บัญชีของฉัน" back="/">{user ? <div className="account-panel"><p>เข้าสู่ระบบด้วย <strong>{user.email}</strong></p><div className="account-actions"><Link className="button button-gold" to="/history">ดูประวัติการเปิดไพ่</Link><button className="button button-outline" disabled={busy} onClick={signOut}>{busy ? 'กำลังออกจากระบบ…' : 'ออกจากระบบ'}</button></div>{error && <p className="error-message" role="alert">ออกจากระบบไม่สำเร็จ กรุณาลองอีกครั้ง</p>}</div> : <div className="account-panel"><p>เข้าสู่ระบบเพื่อดูประวัติ หรือเปิดไพ่แบบไม่สมัครสมาชิกได้</p><div className="account-actions"><Link className="button button-gold" to="/login">เข้าสู่ระบบ</Link><Link className="button button-outline" to="/register">สมัครสมาชิก</Link></div></div>}</Page>
+  return <Page kicker="ACCOUNT" title="บัญชีของฉัน" back="/">{user ? <div className="account-panel"><p>เข้าสู่ระบบด้วย <strong>{user.email}</strong></p><div className="account-actions"><Link className="button button-gold" to="/history">ดูประวัติการเปิดไพ่</Link>{user.role === 'admin' && <Link className="button button-outline" to="/admin/analytics">สถิติเข้าชม</Link>}<button className="button button-outline" disabled={busy} onClick={signOut}>{busy ? 'กำลังออกจากระบบ…' : 'ออกจากระบบ'}</button></div>{error && <p className="error-message" role="alert">ออกจากระบบไม่สำเร็จ กรุณาลองอีกครั้ง</p>}</div> : <div className="account-panel"><p>เข้าสู่ระบบเพื่อดูประวัติ หรือเปิดไพ่แบบไม่สมัครสมาชิกได้</p><div className="account-actions"><Link className="button button-gold" to="/login">เข้าสู่ระบบ</Link><Link className="button button-outline" to="/register">สมัครสมาชิก</Link></div></div>}</Page>
 }
 async function loadHistory(user) {
   const accountRows = user ? await getHistory() : []
@@ -433,10 +433,55 @@ function History() {
   }
   return <Page kicker="YOUR JOURNEY" title="ประวัติการเปิดไพ่" lead="กลับมาทบทวนคำถามและเรื่องราวที่ผ่านมา" back="/">{error && <p className="error-message" role="alert">{error}</p>}<RemoteState state={state} authAware empty={user ? "ยังไม่มีประวัติการเปิดไพ่" : "ยังไม่มีประวัติในเบราว์เซอร์นี้ หลังเปิดไพ่เสร็จจะดูย้อนหลังได้ที่นี่"}>{rows => <div className="history-list">{rows.map(row => <article className="history-item" key={row.id}><div className="history-meta"><span>{row.category?.name_th || 'การเปิดไพ่'}</span>{row.created_at && <time dateTime={row.created_at}>{new Date(row.created_at).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' })}</time>}</div><h2>{row.question?.prompt_th || row.question_text || 'การเปิดไพ่'}</h2><p>{row.cards?.filter(item => item.card).map(item => item.card.name_th).join(' · ') || 'ยังไม่มีไพ่ที่เปิด'}</p>{row.interpretation_summary && <p>{row.interpretation_summary}</p>}<div className="history-actions"><Link className="account-link" to={`/result/${encodeURIComponent(row.id)}`}>ดูรายละเอียด <ArrowRight size={16} aria-hidden="true" /></Link><button type="button" className="history-delete" disabled={deleting !== null} onClick={() => remove(row.id)}>{deleting === row.id ? 'กำลังลบ…' : 'ลบประวัติ'}</button></div></article>)}</div>}</RemoteState></Page>
 }
-function Privacy() { return <Page kicker="PRIVACY" title="ข้อมูลส่วนบุคคล" back="/"><div className="account-panel"><p>คำถามและคำทำนายของคุณอาจถูกส่งไปประมวลผลกับผู้ให้บริการ AI ภายนอกเมื่อเปิดใช้งานบริการดังกล่าว</p><p>ประวัติของผู้เยี่ยมชมดูได้ในเบราว์เซอร์ที่เปิดไพ่ขณะที่สิทธิ์เข้าถึงยังใช้ได้ และสามารถลบรายการได้จากหน้าประวัติ</p><p>เมื่อเข้าสู่ระบบ คำอ่านที่เปิดขณะใช้บัญชีจะอยู่ในประวัติของบัญชีนั้น</p></div></Page> }
+const ANALYTICS_PAGES = {
+  '/': ['home', 'หน้าแรก'], '/categories': ['categories', 'เลือกหัวข้อ'],
+  '/questions': ['questions', 'เลือกคำถาม'], '/spreads': ['spreads', 'เลือกรูปแบบไพ่'],
+  '/shuffle': ['shuffle', 'สับและเลือกไพ่'], '/history': ['history', 'ประวัติ'],
+  '/account': ['account', 'บัญชี'], '/login': ['login', 'เข้าสู่ระบบ'],
+  '/register': ['register', 'สมัครสมาชิก'], '/privacy': ['privacy', 'ข้อมูลส่วนบุคคล'],
+}
+const PAGE_NAMES = Object.fromEntries([...Object.values(ANALYTICS_PAGES), ['reveal', 'เปิดไพ่'], ['result', 'ผลคำทำนาย']])
+function analyticsRoute(pathname) {
+  if (ANALYTICS_PAGES[pathname]) return ANALYTICS_PAGES[pathname][0]
+  const match = pathname.match(/^\/(reveal|result)\/([^/]+)$/)
+  return match && READING_UUID.test(match[2]) ? match[1] : null
+}
+
+function Analytics() {
+  const { user } = useContext(Auth)
+  const [days, setDays] = useState(7)
+  const state = useRemote(() => user?.role === 'admin' ? getAnalytics(days) : Promise.resolve(null), [user?.id, user?.role, days])
+  const data = state.data
+  return <Page kicker="ADMIN" title="สถิติเข้าชม" lead="ดูภาพรวมการเปิดหน้าเว็บตามเวลาไทย" back="/account">
+    {!user ? <div className="empty-state"><p>กรุณาเข้าสู่ระบบด้วยบัญชีผู้ดูแล</p><Link className="button button-outline" to="/login">เข้าสู่ระบบ</Link></div>
+      : user.role !== 'admin' ? <div className="empty-state" role="alert"><p>บัญชีนี้ไม่มีสิทธิ์ดูสถิติ</p></div>
+      : <>
+        <div className="analytics-period" role="group" aria-label="ช่วงเวลาที่แสดง">
+          {[[1, 'วันนี้'], [7, '7 วัน'], [30, '30 วัน']].map(([value, label]) => <button key={value} type="button" aria-pressed={days === value} onClick={() => setDays(value)}>{label}</button>)}
+        </div>
+        {state.loading ? <div className="empty-state" role="status">กำลังโหลดสถิติ…</div>
+          : state.error ? <div className="empty-state" role="alert"><p>{state.error.response?.status === 403 ? 'บัญชีนี้ไม่มีสิทธิ์ดูสถิติ' : state.error.response?.status === 401 ? 'เซสชันหมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง' : 'โหลดสถิติไม่สำเร็จ กรุณาลองอีกครั้ง'}</p>{![401, 403].includes(state.error.response?.status) && <button className="button button-outline" onClick={state.retry}>ลองอีกครั้ง</button>}</div>
+          : data && <div className="analytics-report">
+            <div className="analytics-totals" aria-label="ภาพรวมสถิติ">
+              <div><span>ยอดเปิดหน้า</span><strong>{data.page_views.toLocaleString('th-TH')}</strong><small>ครั้ง</small></div>
+              <div><span>เบราว์เซอร์รายวันโดยประมาณ</span><strong>{data.browser_days.toLocaleString('th-TH')}</strong><small>{days === 1 ? 'เบราว์เซอร์' : 'รวมรายวัน'}</small></div>
+            </div>
+            <p className="analytics-note">เบราว์เซอร์เดียวกันที่เข้ามาหลายวันจะถูกนับในแต่ละวัน และการล้างคุกกี้หรือใช้อุปกรณ์อื่นอาจทำให้ถูกนับเพิ่ม</p>
+            <p className="analytics-breakdown">ยอดเปิดหน้า: เข้าสู่ระบบ {data.signed_in_views.toLocaleString('th-TH')} ครั้ง · ผู้เยี่ยมชม {data.guest_views.toLocaleString('th-TH')} ครั้ง</p>
+            <section className="analytics-section"><h2>สถิติรายวัน</h2>
+              {data.daily.length ? <div className="analytics-table-wrap"><table><thead><tr><th scope="col">วันที่</th><th scope="col">เปิดหน้า</th><th scope="col">เบราว์เซอร์โดยประมาณ</th></tr></thead><tbody>{data.daily.map(row => <tr key={row.day}><th scope="row">{row.day}</th><td>{row.page_views.toLocaleString('th-TH')}</td><td>{row.browser_days.toLocaleString('th-TH')}</td></tr>)}</tbody></table></div> : <p>ยังไม่มีข้อมูลในช่วงเวลานี้</p>}
+            </section>
+            <section className="analytics-section"><h2>หน้าที่เปิดบ่อย</h2>{data.top_pages.length ? <ol className="analytics-pages">{data.top_pages.map(row => <li key={row.route_key}><span>{PAGE_NAMES[row.route_key] || 'หน้าอื่น'}</span><strong>{row.page_views.toLocaleString('th-TH')} ครั้ง</strong></li>)}</ol> : <p>ยังไม่มีข้อมูลในช่วงเวลานี้</p>}</section>
+          </div>}
+      </>}
+  </Page>
+}
+
+function Privacy() { return <Page kicker="PRIVACY" title="ข้อมูลส่วนบุคคล" back="/"><div className="account-panel"><p>คำถามและคำทำนายของคุณอาจถูกส่งไปประมวลผลกับผู้ให้บริการ AI ภายนอกเมื่อเปิดใช้งานบริการดังกล่าว</p><p>ประวัติของผู้เยี่ยมชมดูได้ในเบราว์เซอร์ที่เปิดไพ่ขณะที่สิทธิ์เข้าถึงยังใช้ได้ และสามารถลบรายการได้จากหน้าประวัติ</p><p>เมื่อเข้าสู่ระบบ คำอ่านที่เปิดขณะใช้บัญชีจะอยู่ในประวัติของบัญชีนั้น</p><p>เว็บไซต์ใช้คุกกี้ระยะสั้นเพื่อรวบรวมสถิติการเปิดหน้าและจำนวนเบราว์เซอร์โดยประมาณ ข้อมูลสถิติไม่เก็บอีเมล IP คำถาม หรือรหัสการอ่าน และเก็บไว้ประมาณ 30 วัน คุณสามารถล้างหรือปิดกั้นคุกกี้ในเบราว์เซอร์ได้</p></div></Page> }
 function App() {
   const [draft, setDraft] = useState(() => readSession(DRAFT_KEY, {})); const [auth, setAuth] = useState({ loading: true, user: null, error: false }); const [authAttempt, setAuthAttempt] = useState(0)
   const location = useLocation(); const reduced = useReducedMotion()
+  const lastTrackedNavigation = useRef(null)
   function setIdentity(user) {
     const identity = user ? String(user.id) : 'guest'
     const previous = sessionStorage.getItem('tarot-identity')
@@ -445,7 +490,14 @@ function App() {
   }
   useEffect(() => { let active = true; getCurrentUser().then(user => { if (active) setIdentity(user) }).catch(error => { if (!active) return; if (error.response?.status === 401) setIdentity(null); else setAuth({ loading: false, user: null, error: true }) }); return () => { active = false } }, [authAttempt])
   useEffect(() => { if (!auth.loading && !auth.error) sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft)) }, [draft, auth.loading, auth.error])
+  useEffect(() => {
+    const route = analyticsRoute(location.pathname)
+    const navigation = `${location.key}:${location.pathname}`
+    if (auth.loading || auth.error || lastTrackedNavigation.current === navigation) return
+    lastTrackedNavigation.current = navigation
+    if (route && typeof globalThis.crypto?.randomUUID === 'function') recordPageView(globalThis.crypto.randomUUID(), route).catch(() => {})
+  }, [location.key, location.pathname, auth.loading, auth.error])
   if (auth.loading || auth.error) return <main className="container"><div className="empty-state" role={auth.error ? 'alert' : 'status'}>{auth.error ? <><p>ตรวจสอบบัญชีไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่อ</p><button className="button button-outline" onClick={() => { setAuth({ loading: true, user: null, error: false }); setAuthAttempt(n => n + 1) }}>ลองอีกครั้ง</button></> : 'กำลังตรวจสอบบัญชี…'}</div></main>
-  return <Auth.Provider value={{user: auth.user, setIdentity}}><Draft.Provider value={{draft, setDraft}}><a className="skip-link" href="#main">ข้ามไปยังเนื้อหา</a><Header /><main id="main" tabIndex="-1"><AnimatePresence mode="wait"><motion.div key={location.pathname} initial={reduced ? false : {opacity: 0, y: 6}} animate={{opacity: 1, y: 0}} exit={reduced ? {} : {opacity: 0}} transition={{duration: .18}}><Routes location={location}><Route path="/" element={<Home />} /><Route path="/categories" element={<Categories />} /><Route path="/questions" element={<Questions />} /><Route path="/spreads" element={<Spreads />} /><Route path="/shuffle" element={<DeckSelection />} /><Route path="/pick" element={<Navigate to="/shuffle" replace />} /><Route path="/reveal/:id" element={<ReadingPage />} /><Route path="/result/:id" element={<ReadingPage result />} /><Route path="/history" element={<History />} /><Route path="/login" element={<AuthForm key="login" mode="login" />} /><Route path="/register" element={<AuthForm key="register" mode="register" />} /><Route path="/account" element={<Account />} /><Route path="/privacy" element={<Privacy />} /><Route path="*" element={<Page kicker="PAGE NOT FOUND" title="ไม่พบหน้าที่คุณกำลังมองหา"><Link className="button button-outline" to="/">กลับหน้าแรก</Link></Page>} /></Routes></motion.div></AnimatePresence></main><footer><div className="container footer-inner"><span><MoonStar size={17} aria-hidden="true" /> ไพ่ทาโรต์</span><p>พื้นที่สำหรับการทบทวนตัวเอง · <Link to="/privacy">ข้อมูลส่วนบุคคล</Link></p></div></footer></Draft.Provider></Auth.Provider>
+  return <Auth.Provider value={{user: auth.user, setIdentity}}><Draft.Provider value={{draft, setDraft}}><a className="skip-link" href="#main">ข้ามไปยังเนื้อหา</a><Header /><main id="main" tabIndex="-1"><AnimatePresence mode="wait"><motion.div key={location.pathname} initial={reduced ? false : {opacity: 0, y: 6}} animate={{opacity: 1, y: 0}} exit={reduced ? {} : {opacity: 0}} transition={{duration: .18}}><Routes location={location}><Route path="/" element={<Home />} /><Route path="/categories" element={<Categories />} /><Route path="/questions" element={<Questions />} /><Route path="/spreads" element={<Spreads />} /><Route path="/shuffle" element={<DeckSelection />} /><Route path="/pick" element={<Navigate to="/shuffle" replace />} /><Route path="/reveal/:id" element={<ReadingPage />} /><Route path="/result/:id" element={<ReadingPage result />} /><Route path="/history" element={<History />} /><Route path="/login" element={<AuthForm key="login" mode="login" />} /><Route path="/register" element={<AuthForm key="register" mode="register" />} /><Route path="/account" element={<Account />} /><Route path="/admin/analytics" element={<Analytics />} /><Route path="/privacy" element={<Privacy />} /><Route path="*" element={<Page kicker="PAGE NOT FOUND" title="ไม่พบหน้าที่คุณกำลังมองหา"><Link className="button button-outline" to="/">กลับหน้าแรก</Link></Page>} /></Routes></motion.div></AnimatePresence></main><footer><div className="container footer-inner"><span><MoonStar size={17} aria-hidden="true" /> ไพ่ทาโรต์</span><p>พื้นที่สำหรับการทบทวนตัวเอง · <Link to="/privacy">ข้อมูลส่วนบุคคล</Link></p></div></footer></Draft.Provider></Auth.Provider>
 }
 createRoot(document.getElementById('root')).render(<React.StrictMode><BrowserRouter><App /></BrowserRouter></React.StrictMode>)

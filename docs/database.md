@@ -4,7 +4,7 @@ MySQL with SQLAlchemy models and Alembic migrations. Primary keys use stable int
 
 | Table | Purpose and key constraints |
 | --- | --- |
-| `users` | Unique email; Argon2 password hash; created and updated timestamps. |
+| `users` | Unique email; Argon2 password hash; nullable role; created and updated timestamps. |
 | `auth_sessions` | SHA-256 session token hash, account FK, UTC expiry and nullable revocation timestamp. |
 | `auth_rate_limits` | Pseudonymous client key, fixed window start, and credential-attempt counter. |
 | `tarot_cards` | Exactly 78 seeded stable IDs; unique slug; arcana, suit, rank, expected image filename, nullable verified image path. |
@@ -18,6 +18,7 @@ MySQL with SQLAlchemy models and Alembic migrations. Primary keys use stable int
 | `reading_cards` | Reading FK, position FK, card FK, orientation. Unique `(reading_id, position_id)` and `(reading_id, card_id)`. |
 | `reading_interpretations` | Reading FK, validated structured result, source, model, timestamps. One completed result per reading. |
 | `ai_usage_logs` | Nullable reading FK, nullable account or pseudonymous guest/IP quota scope, provider/model, tokens, cost estimate, status, timestamp. |
+| `analytics_page_views` | Random event UUID primary key, indexed Thai report date, page label, daily browser hash, signed-in flag, and UTC timestamp. |
 
 Reading cards and cached interpretations cascade on reading deletion. AI
 usage rows detach via `ON DELETE SET NULL` and remain in shared and scoped

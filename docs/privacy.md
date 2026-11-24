@@ -33,6 +33,20 @@ outcome and reported usage for accounting without a link to the reading.
 A creation retry hash may remain to prevent a delayed retry from restoring
 the reading.
 
+Visitor analytics help the site owner understand which pages are used. Each
+record contains a random event ID, a page label, its time, whether the browser
+was signed in, and a code valid for counting that browser on that Thai calendar
+day. A separate first-party cookie expires at midnight Thailand time. We do
+not store account IDs, email addresses, IP addresses, questions, reading IDs or
+URL parameters in the analytics table. A short-lived pseudonymous address
+bucket in server memory limits event submissions.
+
+Only administrators can view aggregate counts. Reports include today and up
+to 29 preceding Thai calendar days. Older events are removed in batches when
+the site receives eligible visits, or by the operator's cleanup command. A
+browser that sends Global Privacy Control (`Sec-GPC: 1`) is excluded from
+analytics collection. Disabling cookies makes the browser count less reliable.
+
 Before publication, add the operator's privacy contact, account deletion
 process, applicable provider terms, and verified retention periods for backups,
 session records, rate-limit records, retry hashes and AI usage records.

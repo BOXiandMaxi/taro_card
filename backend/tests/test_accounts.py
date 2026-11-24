@@ -83,7 +83,7 @@ def test_register_login_logout_and_credentials(client, app, database):
     email = f"{uuid4()}@example.test"
     registration = register(client, f"  {email.upper()}  ")
     account = registration.json()
-    assert account == {"id": account["id"], "email": email}
+    assert account == {"id": account["id"], "email": email, "role": None}
     assert all(flag in registration.headers["Set-Cookie"] for flag in ("HttpOnly", "Secure", "SameSite=lax", "Path=/"))
     token = client.cookies.get(SESSION)
     token_hash = sha256(token.encode()).hexdigest()

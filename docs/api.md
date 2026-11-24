@@ -16,15 +16,23 @@ Responses use JSON, with an empty body for `204`. Request validation uses FastAP
 | GET | `/api/auth/csrf` | Fetch a CSRF token for the current browser or session. |
 | POST | `/api/auth/register`, `/api/auth/login`, `/api/auth/logout` | Cookie based account session. |
 | GET | `/api/auth/me`, `/api/history` | Current user and owned reading history. |
+| POST | `/api/analytics/page-view` | Record an eligible in-app navigation. |
+| GET | `/api/admin/analytics` | Visitor analytics for administrators. |
 
 Implemented request/response schemas live in backend Pydantic models and FastAPI OpenAPI output. Never put anonymous capabilities in a URL. The browser sends cookies using `withCredentials`; CORS allows explicit configured origins only.
 
 ## Accounts and history
 
 - Fetch `GET /api/auth/csrf` with credentials included to receive `{"csrf_token":"..."}`. Send that value in `X-CSRF-Token` with registration, login, logout and all reading writes made with an active session, including calls on guest readings. Those requests require a same-origin or explicitly allowed `Origin`. Browser requests supply this header automatically. Refresh the CSRF token after registration, login or logout because the browser's session changes.
-- Register or log in with `{"email":"reader@example.com","password":"..."}`. Emails are trimmed and lowercased. Registration requires a password of 8–128 characters. Registration returns `201` and login returns `200`, both with `{"id":1,"email":"reader@example.com"}` and a session cookie. Duplicate registration returns `409`. Login with an incorrect email or password returns `401`. Rate-limited requests return `429` with `Retry-After` in seconds.
+- Register or log in with `{"email":"reader@example.com","password":"..."}`. Emails are trimmed and lowercased. Registration requires a password of 8–128 characters. Registration returns `201` and login returns `200`, both with an account object and a session cookie. The account object contains `id`, `email`, and `role` (`null` for a regular account or `"admin"`). The server rejects extra registration fields, including `role`. Duplicate registration returns `409`. Login with an incorrect email or password returns `401`. Rate-limited requests return `429` with `Retry-After` in seconds.
 - `GET /api/auth/me` returns the same account object or `401`. `POST /api/auth/logout` revokes the session, clears the cookie and returns `204`. No route redirects. The session cookie is HttpOnly and SameSite=Lax, with Secure on HTTPS. Keep the CSRF token in memory and let the browser store the session cookie.
 - `GET /api/history` returns `401` without a valid session. With a session it returns a JSON array of owned readings, most recent first. Each row includes the regular reading fields plus `category`, `created_at` (UTC ISO 8601) and nullable `interpretation_summary`. Fetch `GET /api/readings/{id}` for the full reading and any cached interpretation. Guest readings stay accessible through their original capabilities and do not appear in account history.
+
+## Visitor analytics
+
+- The page view endpoint accepts JSON with `event_id` (a UUID v4) and `route_key` (one of `home`, `categories`, `questions`, `spreads`, `shuffle`, `reveal`, `result`, `history`, `account`, `login`, `register`, `privacy`). Send a same-origin or explicitly allowed `Origin` and browser credentials. Reuse the event ID when retrying a request. Accepted events and duplicate IDs return `204`. Known crawlers and `Sec-GPC: 1` also receive `204` without recording a view.
+- The report takes `days=1`, `days=7` (default), or `days=30`. A current session and the database role `admin` are required. Missing/expired sessions receive `401` and regular accounts receive `403`. Reports are marked `Cache-Control: no-store`.
+- The report includes `days`, `timezone`, `page_views`, `browser_days`, `signed_in_views`, `guest_views`, `daily` (rows with `day`, `page_views` and `browser_days`) and `top_pages` (rows with `route_key` and `page_views`, descending). The selected range includes today in Asia/Bangkok. `browser_days` sums the number of distinct browsers on each day, so one browser on two days contributes two. Cookie resets, new devices and filtering make this an estimate.
 
 ## Reference responses
 

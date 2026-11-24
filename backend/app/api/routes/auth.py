@@ -1,6 +1,7 @@
 import re
 import secrets
 from functools import lru_cache
+from typing import Literal
 
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerificationError
@@ -8,7 +9,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
-from pydantic import BaseModel, Field, SecretStr, field_validator
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
@@ -61,12 +62,19 @@ class Credentials(BaseModel):
 
 
 class Registration(Credentials):
+    model_config = ConfigDict(extra="forbid")
+
     password: SecretStr = Field(min_length=8, max_length=128)
 
 
 class AccountResponse(BaseModel):
     id: int
     email: str
+    role: Literal["admin"] | None = None
+
+    @classmethod
+    def from_user(cls, user: User) -> "AccountResponse":
+        return cls(id=user.id, email=user.email, role="admin" if user.role == "admin" else None)
 
 
 class CsrfResponse(BaseModel):
@@ -100,7 +108,7 @@ def register(payload: Registration, session: DatabaseSession, request: Request, 
             session.add(user)
             session.flush()
             auth.start_session(session, request, response, user.id)
-            result = AccountResponse(id=user.id, email=user.email)
+            result = AccountResponse.from_user(user)
     except IntegrityError:
         if session.scalar(select(User.id).where(User.email == payload.email)) is not None:
             raise HTTPException(409, "Email already registered") from None
@@ -121,7 +129,7 @@ def login(payload: Credentials, session: DatabaseSession, request: Request, resp
         if not verified or user is None:
             raise HTTPException(401, "Invalid email or password")
         auth.start_session(session, request, response, user.id)
-        return AccountResponse(id=user.id, email=user.email)
+        return AccountResponse.from_user(user)
 
 
 @router.post("/logout", status_code=204)
@@ -142,4 +150,4 @@ def me(session: DatabaseSession, request: Request):
     user = session.get(User, account.user_id)
     if user is None:
         raise HTTPException(401, "Authentication required")
-    return AccountResponse(id=user.id, email=user.email)
+    return AccountResponse.from_user(user)

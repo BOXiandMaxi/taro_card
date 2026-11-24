@@ -74,6 +74,7 @@ def database(tmp_path_factory):
                     created_at=utc_now() - timedelta(days=2),
                 ))
                 scripts.get_revision("0004_accounts").module.upgrade()
+                scripts.get_revision("0005_visitor_analytics").module.upgrade()
         yield engine
     finally:
         if url and prepared:
