@@ -1,11 +1,16 @@
-<p align="center">☾ ✦ ☽</p>
+<p align="center">
+  <img src="docs/readme-banner.svg" alt="Tarot Reading: ดวงจันทร์ ดวงดาว และไพ่ทาโรต์" width="100%">
+</p>
 
-# Tarot Reading
+<h1 align="center">☾ Tarot Reading ☽</h1>
 
-**พื้นที่เล็ก ๆ สำหรับเปิดไพ่ สำรวจคำถาม และทบทวนเรื่องราวของตัวเอง**
+<p align="center"><strong>หยุดพักสักนิด แล้วฟังเสียงข้างใน</strong><br>
+พื้นที่เล็ก ๆ สำหรับเปิดไพ่ สำรวจคำถาม และทบทวนเรื่องราวของตัวเอง</p>
 
-[เปิดเว็บไซต์](https://taro-card.onrender.com/) · [วิธีติดตั้ง](#เริ่มใช้งานบนเครื่อง) · [เอกสารโปรเจกต์](#เอกสารเพิ่มเติม)
-
+<p align="center">
+  <a href="https://taro-card.onrender.com/"><strong>✦ เปิดเว็บไซต์ ✦</strong></a><br><br>
+  <a href="#ภาพตัวอย่าง">ภาพตัวอย่าง</a> · <a href="#เริ่มใช้งานบนเครื่อง">วิธีติดตั้ง</a> · <a href="#เอกสารเพิ่มเติม">เอกสารโปรเจกต์</a>
+</p>
 
 ---
 
@@ -15,14 +20,29 @@
 
 ผู้ใช้เลือกคำถาม สับและเปิดไพ่ แล้วอ่านความหมายตามตำแหน่งที่ได้รับ คำอ่านมีไว้เพื่อความบันเทิงและใช้ประกอบการทบทวนตัวเอง ผลลัพธ์และการใช้งาน AI ขึ้นอยู่กับการตั้งค่าและโควตาของระบบ
 
-## ☾ ภาพตัวอย่าง
+## ภาพตัวอย่าง
 
-| หน้าจอ | ภาพตัวอย่าง |
-| --- | --- |
-| หน้าแรก | ![หน้าแรกของเว็บไซต์](docs/screenshots/home.png) |
-| เลือกหัวข้อ | ![หน้าเลือกหัวข้อ](docs/screenshots/category.jpg) |
-| สับและเลือกไพ่ | ![หน้าสับและเลือกไพ่](docs/screenshots/reading.jpg) |
-| เปิดไพ่ | ![หน้าเปิดไพ่และความหมายรายใบ](docs/screenshots/reveal.jpg) |
+**เริ่มต้นจากพื้นที่สำหรับตัวคุณ**
+
+![หน้าแรกของเว็บไซต์](docs/screenshots/home.png)
+
+**เลือกหัวข้อที่อยากสำรวจ แล้วให้ไพ่นำทางไปอีกมุมมอง**
+
+![หน้าเลือกหัวข้อ](docs/screenshots/category.jpg)
+
+<details>
+<summary>✦ ดูหน้าสับ เลือก และเปิดไพ่</summary>
+<br>
+
+**สับและเลือกไพ่**
+
+![หน้าสับและเลือกไพ่](docs/screenshots/reading.jpg)
+
+**เปิดไพ่และดูความหมายรายใบ**
+
+![หน้าเปิดไพ่และความหมายรายใบ](docs/screenshots/reveal.jpg)
+
+</details>
 
 ## ✦ การใช้งาน
 
@@ -127,6 +147,6 @@ npm.cmd run build
 
 ---
 
-✦ พัฒนาด้วยความสนุกและความตั้งใจในการเรียนรู้ ✦
-
-**Programmer** · [Email](mailto:keattisaksari@gmail.com) · LINE: `boxigsl`
+<p align="center">☾ &nbsp; ✦ &nbsp; ☽<br>
+พัฒนาด้วยความสนุกและความตั้งใจในการเรียนรู้<br><br>
+<strong>Programmer</strong> · <a href="mailto:keattisaksari@gmail.com">Email</a> · LINE: <code>boxigsl</code></p>

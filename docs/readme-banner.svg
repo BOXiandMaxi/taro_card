@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 420" role="img" aria-labelledby="title desc">
+  <title id="title">Tarot Reading</title>
+  <desc id="desc">A celestial tarot illustration in midnight blue and antique gold</desc>
+  <rect width="1200" height="420" fill="#151a36"/>
+  <rect x="16" y="16" width="1168" height="388" rx="4" fill="none" stroke="#b79a5e" opacity=".65"/>
+  <rect x="23" y="23" width="1154" height="374" rx="2" fill="none" stroke="#b79a5e" opacity=".25"/>
+  <g fill="#d9bd7c" opacity=".8">
+    <circle cx="91" cy="76" r="2"/><circle cx="194" cy="155" r="1.5"/><circle cx="86" cy="312" r="1.5"/>
+    <circle cx="1090" cy="86" r="2"/><circle cx="1025" cy="320" r="1.5"/><circle cx="1139" cy="247" r="1.5"/>
+    <path d="M152 72l3 8 8 3-8 3-3 8-3-8-8-3 8-3zm900 124l3 8 8 3-8 3-3 8-3-8-8-3 8-3zM105 231l2 6 6 2-6 2-2 6-2-6-6-2 6-2z"/>
+  </g>
+  <g fill="none" stroke="#c9ac70">
+    <circle cx="600" cy="146" r="76" opacity=".32"/><circle cx="600" cy="146" r="65" opacity=".5"/>
+    <path d="M600 50v-13m0 218v-13M504 146h-13m218 0h-13" opacity=".7"/>
+    <path d="M574 121a38 38 0 1 0 48 48 34 34 0 0 1-48-48z" fill="#dfc487" stroke="none"/>
+    <path d="M535 274h-110m350 0H665" opacity=".6"/>
+    <path d="M600 254l5 13 13 5-13 5-5 13-5-13-13-5 13-5z" fill="#dfc487" stroke="none"/>
+    <g opacity=".75">
+      <rect x="260" y="111" width="112" height="182" rx="6" transform="rotate(-13 316 202)"/>
+      <rect x="279" y="112" width="112" height="182" rx="6" transform="rotate(8 335 203)"/>
+      <circle cx="334" cy="203" r="29"/><path d="M334 164v78m-39-39h78m-47-11a20 20 0 1 0 21 27 19 19 0 0 1-21-27z"/>
+      <rect x="828" y="111" width="112" height="182" rx="6" transform="rotate(13 884 202)"/>
+      <rect x="809" y="112" width="112" height="182" rx="6" transform="rotate(-8 865 203)"/>
+      <circle cx="866" cy="203" r="29"/><path d="M866 164v78m-39-39h78m-47-11a20 20 0 1 0 21 27 19 19 0 0 1-21-27z"/>
+    </g>
+  </g>
+  <text x="600" y="327" text-anchor="middle" fill="#f6eedb" font-family="Georgia, serif" font-size="43" letter-spacing="9">TAROT READING</text>
+  <text x="600" y="359" text-anchor="middle" fill="#d3b879" font-family="Arial, sans-serif" font-size="12" letter-spacing="4">A MOMENT TO LOOK WITHIN</text>
+</svg>
