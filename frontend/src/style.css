@@ -192,3 +192,32 @@ button{font:inherit;cursor:pointer}button:focus-visible,summary:focus-visible{ou
 .analytics-pages li{display:flex;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid #dedbd4;font-size:14px}
 .analytics-pages strong{white-space:nowrap}
 @media(max-width:500px){.analytics-totals{grid-template-columns:1fr}.analytics-totals>div{padding:16px}.analytics-table-wrap th,.analytics-table-wrap td{padding:10px}.analytics-table-wrap table{font-size:13px}}
+
+/* Site navigation and project information */
+.site-header .nav-link{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:48px;font-weight:600;transition:color .15s,border-color .15s}
+.site-header .nav-link svg{flex:none;color:#c3b184;stroke-width:1.7}
+.site-header .nav-link:hover{color:#fff}
+.site-header .nav-link.active svg{color:#f4dfab}
+.site-footer{border-top:1px solid #d9bd7e33}
+.footer-content{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:80px;padding:58px 0 48px}
+.footer-brand{display:flex;align-items:center;gap:11px;color:#fff}
+.footer-mark{width:38px;height:38px;display:grid;place-items:center;border:1px solid #b69a60;border-radius:50%;color:#e3ca8e}
+.footer-brand strong,.footer-brand small{display:block}.footer-brand strong{font-size:15px}.footer-brand small{margin-top:4px;color:#d9c28d;font-size:9px;letter-spacing:.14em}
+.footer-about h2{margin:25px 0 8px;color:#f4ecdb;font-size:16px;font-weight:600}
+.footer-about p{max-width:500px;margin:0;color:#c8c5d0;font-size:14px;line-height:1.9}
+.footer-details{display:grid;grid-template-columns:1fr 1fr;gap:28px;padding-top:4px}
+.footer-details h2{margin:0 0 18px;color:#ead29e;font-size:14px;font-weight:700}
+.footer-details p{margin:0 0 5px;color:#c8c5d0;font-size:13px;line-height:1.8}
+.footer-details strong{color:#f5f1e8;font-size:14px;font-weight:600}
+.footer-project-link,.footer-contact{display:flex;align-items:center;gap:9px;color:#e8e4e9;font-size:13px;line-height:1.7;overflow-wrap:anywhere}
+.footer-project-link{width:max-content;max-width:100%;margin-top:17px;text-decoration:underline;text-underline-offset:4px}
+.footer-contact+.footer-contact{margin-top:11px}.footer-contact svg,.footer-project-link svg{flex:none;color:#d9bd7e}
+.footer-contact:hover,.footer-project-link:hover,.footer-bottom a:hover{color:#f4dfab}
+.footer-bottom{display:flex;justify-content:space-between;gap:18px;align-items:center;padding:18px 0 22px;border-top:1px solid #ffffff20;color:#c8c5d0;font-size:12px}
+.footer-bottom a{text-decoration:underline;text-underline-offset:4px}
+@media(max-width:700px){
+  .site-header .nav-link{flex-direction:column;gap:5px;min-height:58px;padding:8px 2px;font-size:12px}
+  .footer-content{grid-template-columns:1fr;gap:32px;padding:42px 0 32px}
+  .footer-details{gap:20px}.footer-bottom{align-items:flex-start;flex-wrap:wrap}
+}
+@media(max-width:380px){.footer-details{grid-template-columns:1fr;gap:26px}.footer-details h2{margin-bottom:10px}}
