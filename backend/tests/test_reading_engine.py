@@ -75,6 +75,7 @@ def database(tmp_path_factory):
                 ))
                 scripts.get_revision("0004_accounts").module.upgrade()
                 scripts.get_revision("0005_visitor_analytics").module.upgrade()
+                scripts.get_revision("0006_user_id_sequence").module.upgrade()
         yield engine
     finally:
         if url and prepared:

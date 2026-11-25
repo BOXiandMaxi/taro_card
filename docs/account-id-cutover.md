@@ -1,0 +1,12 @@
+# Change the three existing account IDs
+
+Alembic revision `0006_user_id_sequence` adds one counter initialized from the highest current user ID. The new registration route advances that counter in the same transaction that creates the account and signs it in. Concurrent registrations take turns. A rejected registration rolls back the increment. Account deletion can leave a gap. Regular registration always advances the counter. Direct SQL imports that assign IDs bypass this behavior.
+
+For TiDB production, rehearse the steps on a restored copy of the database first. Take a restorable backup and stop all app and manual database writes for the cutover, including requests already in progress. The script locks the new registration counter during the remap. Old app versions and manual writes bypass that lock.
+
+1. Apply the Alembic migration using a TiDB migration account. The app's runtime account needs `SELECT` and `UPDATE` on `tarot_reading.user_id_sequence`. Configure these grants before starting the new release.
+2. From `backend/`, run `python -m scripts.renumber_users` and enter the TLS-enabled SQLAlchemy connection URL at the hidden prompt. Use an account with visibility into every foreign key to `tarot_reading.users` and write privileges to the affected tables. Dry run requires exactly IDs `1, 30001, 120001` and the expected foreign keys. Check the result before continuing.
+3. With writes still stopped, run `python -m scripts.renumber_users --apply`. The script uses TiDB's pessimistic transaction mode and Read Committed so its preflight sees any registration that finished before it acquired the counter lock. It maps `30001 → 2` and `120001 → 3` in one transaction, preserves reading ownership and login sessions, updates AI quota attribution, and sets the counter to `3`. It verifies row counts and account references before committing.
+4. Start the new version before allowing registration again. Check that the three accounts and their reading history still resolve, and that the next successful registration receives ID `4`. The old version can resume using TiDB's original automatic allocation, so keep it stopped after the remap.
+
+If the script stops before commit, it rolls back account changes. Keep writes stopped and inspect the current IDs before retrying any connection error. If a committed remap must be reverted, restore the backup during the maintenance window before reopening writes. Browser drafts can reset when a remapped account's new ID is first loaded.

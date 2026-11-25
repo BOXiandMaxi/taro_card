@@ -5,6 +5,7 @@ MySQL with SQLAlchemy models and Alembic migrations. Primary keys use stable int
 | Table | Purpose and key constraints |
 | --- | --- |
 | `users` | Unique email; Argon2 password hash; nullable role; created and updated timestamps. |
+| `user_id_sequence` | One row that stores the last allocated account ID for transactional registration. |
 | `auth_sessions` | SHA-256 session token hash, account FK, UTC expiry and nullable revocation timestamp. |
 | `auth_rate_limits` | Pseudonymous client key, fixed window start, and credential-attempt counter. |
 | `tarot_cards` | Exactly 78 seeded stable IDs; unique slug; arcana, suit, rank, expected image filename, nullable verified image path. |

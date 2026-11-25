@@ -45,6 +45,14 @@ def analytics_migration():
     return module
 
 
+def user_id_sequence_migration():
+    path = Path(__file__).resolve().parents[1] / "alembic/versions/0006_user_id_sequence.py"
+    spec = importlib.util.spec_from_file_location("user_id_sequence_schema", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 class DatabaseTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -78,6 +86,7 @@ class DatabaseTests(unittest.TestCase):
                 reading_engine_migration().upgrade()
                 accounts_migration().upgrade()
                 analytics_migration().upgrade()
+                user_id_sequence_migration().upgrade()
         self.addCleanup(self.engine.dispose)
 
     def seed(self):
@@ -98,7 +107,7 @@ class DatabaseTests(unittest.TestCase):
         from alembic.autogenerate import compare_metadata
         from alembic.migration import MigrationContext
 
-        self.assertEqual(len(inspect(self.engine).get_table_names()), 15)
+        self.assertEqual(len(inspect(self.engine).get_table_names()), 16)
         with self.engine.connect() as connection:
             diff = compare_metadata(MigrationContext.configure(connection), self.base.metadata)
         self.assertEqual(diff, [])
@@ -115,8 +124,10 @@ class DatabaseTests(unittest.TestCase):
             initial_migration().upgrade()
             accounts_migration().upgrade()
             analytics_migration().upgrade()
+            user_id_sequence_migration().upgrade()
         sql = output.getvalue()
-        self.assertEqual(sql.count("CREATE TABLE"), 15)
+        self.assertEqual(sql.count("CREATE TABLE"), 16)
+        self.assertIn("INSERT INTO user_id_sequence", sql)
         self.assertIn("ALTER TABLE users ADD COLUMN", sql)
         self.assertIn("CREATE TABLE analytics_page_views", sql)
         self.assertIn("utf8mb4", sql)

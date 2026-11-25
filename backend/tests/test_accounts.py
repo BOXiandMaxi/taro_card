@@ -2,7 +2,7 @@ import json
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 from hashlib import sha256
-from threading import Event
+from threading import Barrier, Event
 from uuid import uuid4
 
 import pytest
@@ -112,6 +112,34 @@ def test_register_login_logout_and_credentials(client, app, database):
     assert client.cookies.get(SESSION) is None
     with TestClient(app, base_url=ORIGIN, cookies={SESSION: fresh}) as revoked:
         assert revoked.get("/api/auth/me").status_code == 401
+
+
+def test_duplicate_registration_does_not_skip_a_user_id(client):
+    first = register(client).json()
+    duplicate = client.post("/api/auth/register", headers=csrf(client), json={
+        "email": first["email"], "password": PASSWORD,
+    })
+    assert duplicate.status_code == 409
+    assert register(client).json()["id"] == first["id"] + 1
+
+
+def test_concurrent_registrations_receive_consecutive_user_ids(app, client):
+    previous_id = register(client).json()["id"]
+    begin = Barrier(2)
+
+    def submit():
+        with TestClient(app, base_url=ORIGIN) as client:
+            headers = csrf(client)
+            begin.wait(timeout=10)
+            return client.post("/api/auth/register", headers=headers, json={
+                "email": f"{uuid4()}@example.test", "password": PASSWORD,
+            })
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        requests = [executor.submit(submit) for _ in range(2)]
+        responses = [request.result(timeout=20) for request in requests]
+    assert [response.status_code for response in responses] == [201, 201]
+    assert sorted(response.json()["id"] for response in responses) == [previous_id + 1, previous_id + 2]
 
 
 def test_expiration_and_local_cookie(app, database):

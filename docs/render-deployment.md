@@ -48,7 +48,7 @@ backend\.venv\Scripts\python.exe -m database.seeds.seed
 backend\.venv\Scripts\python.exe -m database.assets.validate
 ```
 
-`alembic current` should report `0005_visitor_analytics (head)`. The seed should report
+`alembic current` should report `0006_user_id_sequence (head)`. The seed should report
 78 cards and 78 meanings. Existing local MariaDB accounts and reading history
 are **not** copied by the seed; a separate data migration would be needed if
 you want to retain them. Remove the terminal variable when finished:
@@ -56,6 +56,9 @@ you want to retain them. Remove the terminal variable when finished:
 ```powershell
 Remove-Item Env:DATABASE_URL
 ```
+
+For the one-time renumbering of the three existing production accounts, use
+the [account ID cutover procedure](account-id-cutover.md) before reopening registrations.
 
 ### Add or remove an analytics administrator
 

@@ -10,11 +10,11 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
-from sqlalchemy import select
+from sqlalchemy import case, func, select, update
 from sqlalchemy.exc import IntegrityError
 
 from app.api.routes.reference import DatabaseSession
-from app.models import User
+from app.models import User, UserIdSequence
 from app.services import auth
 
 
@@ -104,7 +104,19 @@ def register(payload: Registration, session: DatabaseSession, request: Request, 
     password_hash = password_hasher.hash(payload.password.get_secret_value())
     try:
         with session.begin():
-            user = User(email=payload.email, password_hash=password_hash)
+            # Lock the shared allocator through the end of registration so a
+            # failed insert rolls back the allocation along with the account.
+            max_user_id = select(func.coalesce(func.max(User.id), 0)).scalar_subquery()
+            sequence = session.execute(update(UserIdSequence).where(UserIdSequence.id == 1).values(
+                last_id=case(
+                    (UserIdSequence.last_id < max_user_id, max_user_id),
+                    else_=UserIdSequence.last_id,
+                ) + 1,
+            ))
+            if sequence.rowcount != 1:
+                raise RuntimeError("Missing account ID allocator. Apply the database migrations.")
+            user_id = session.scalar(select(UserIdSequence.last_id).where(UserIdSequence.id == 1))
+            user = User(id=user_id, email=payload.email, password_hash=password_hash)
             session.add(user)
             session.flush()
             auth.start_session(session, request, response, user.id)

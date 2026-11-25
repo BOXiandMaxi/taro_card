@@ -20,6 +20,13 @@ class User(Timestamps, Base):
     role: Mapped[str | None] = mapped_column(String(16))
 
 
+class UserIdSequence(Base):
+    __tablename__ = "user_id_sequence"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=False)
+    last_id: Mapped[int] = mapped_column(Integer)
+
+
 class AnalyticsPageView(Base):
     __tablename__ = "analytics_page_views"
 
