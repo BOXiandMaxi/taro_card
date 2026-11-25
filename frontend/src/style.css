@@ -371,3 +371,28 @@ a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid #a9
 @media(max-width:900px){.home-topic-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.feature-row{gap:40px}.experience-panel{grid-template-columns:230px 1fr}.experience-sidebar{padding:25px}}
 @media(max-width:700px){.header-inner{min-height:0}.site-header .nav-link{padding:8px 1px}.hero-inner{padding-top:55px}.hero h1{font-size:clamp(37px,9vw,52px)}.hero-description{font-size:15px}.hero-deck{margin-top:50px;min-height:215px;padding-bottom:35px}.hero-deck img{width:clamp(70px,18vw,110px);border-width:3px}.home-topics,.home-experience{padding:72px 0}.home-section-heading{margin-bottom:30px}.home-topic-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.home-topic{padding:17px;min-height:150px}.home-topic>span{margin-bottom:13px}.experience-panel{grid-template-columns:1fr}.experience-sidebar{border-right:0;border-bottom:1px solid #e8e7e2}.experience-sidebar>strong{font-size:21px;margin-top:12px}.experience-sidebar ol{margin:15px 0}.experience-canvas{padding:25px 14px}.experience-cards{gap:10px;margin-top:28px}.experience-cards img{width:clamp(70px,23vw,110px)}.experience-cards span{font-size:10px}.feature-row{grid-template-columns:1fr;gap:28px;padding:64px 0}.feature-row-reverse .feature-copy{order:0}.feature-copy h2,.home-section-heading h2,.home-final h2{font-size:34px}.feature-visual{min-height:310px}.feature-wheel-inner{width:230px;height:230px}.feature-wheel-inner img{transform:rotate(var(--angle)) translateY(-80px)}.feature-reveal{gap:10px;padding:22px}.feature-reveal-card img{width:110px}.feature-reveal-note{padding:15px;max-width:150px}.home-spreads{padding:72px 0}.home-spread-list span{font-size:28px}.home-final-panel{padding:65px 20px;border-radius:22px}.placeholder-section h1{font-size:34px}.reading-summary{padding:18px}}
 @media(max-width:700px){.home-announcement{font-size:11px;gap:6px;padding:8px 10px}.hero-start{padding:16px;gap:10px;margin-top:24px}.hero-start strong{font-size:14px}.hero-start small{font-size:12px}.hero-start-action{padding:12px;font-size:12px}.hero-start-action svg{width:15px}.hero-actions{margin-top:18px}}
+
+/* Gentle, once-only motion keeps the reading journey calm and readable. */
+@media (prefers-reduced-motion: no-preference){
+  .hero-label,.hero h1,.hero-description,.hero-start,.hero-actions{animation:home-rise .75s cubic-bezier(.22,1,.36,1) both}
+  .hero h1{animation-delay:.08s}.hero-description{animation-delay:.16s}.hero-start{animation-delay:.24s}.hero-actions{animation-delay:.3s}
+  .hero-deck img{--hero-card-y:0px;animation:home-card-fan 1.15s cubic-bezier(.2,.75,.25,1) both}
+  .hero-deck img:first-child{--hero-card-y:30px;animation-delay:.38s}
+  .hero-deck img:nth-child(2){--hero-card-y:10px;animation-delay:.48s}
+  .hero-deck img:nth-child(3){animation-delay:.58s}
+  .hero-deck img:nth-child(4){--hero-card-y:10px;animation-delay:.68s}
+  .hero-deck img:last-child{--hero-card-y:30px;animation-delay:.78s}
+  .motion-in{animation:home-rise .75s cubic-bezier(.22,1,.36,1) both}
+  .experience-panel.motion-in .experience-cards img{animation:home-card-lift .8s cubic-bezier(.22,1,.36,1) both}
+  .experience-panel.motion-in .experience-cards>div:nth-child(2) img{animation-delay:.13s}
+  .experience-panel.motion-in .experience-cards>div:nth-child(3) img{animation-delay:.26s}
+  .feature-row.motion-in .feature-wheel-inner{animation:home-wheel 1.5s cubic-bezier(.22,1,.36,1) both}
+  .feature-row.motion-in .feature-reveal-card{animation:home-card-turn 1.1s cubic-bezier(.22,1,.36,1) .15s both}
+  .hero-start-action svg,.text-link svg{transition:transform .2s ease}
+  @media (hover:hover){.hero-start:hover .hero-start-action svg,.text-link:hover svg{transform:translateX(4px)}}
+}
+@keyframes home-rise{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes home-card-fan{from{opacity:0;transform:translateY(55px) rotate(0deg) scale(.86)}to{opacity:1;transform:translateY(var(--hero-card-y)) rotate(var(--hero-card-angle)) scale(1)}}
+@keyframes home-card-lift{from{opacity:0;transform:translateY(30px) rotate(-5deg)}to{opacity:1;transform:translateY(0) rotate(0)}}
+@keyframes home-wheel{from{opacity:.45;transform:rotate(-50deg) scale(.9)}to{opacity:1;transform:rotate(0) scale(1)}}
+@keyframes home-card-turn{from{opacity:0;transform:perspective(700px) rotateY(-65deg) translateY(15px)}to{opacity:1;transform:perspective(700px) rotateY(0) translateY(0)}}

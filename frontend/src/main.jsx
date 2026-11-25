@@ -77,8 +77,23 @@ function Footer() {
 function Page({ kicker, title, lead, back, children }) { return <section className="placeholder-section"><div className="container placeholder-container">{back && <Link className="back-link" to={back}><ArrowLeft size={16} aria-hidden="true" /> ย้อนกลับ</Link>}<p className="section-kicker">{kicker}</p><h1>{title}</h1>{lead && <p className="page-lead">{lead}</p>}{children}</div></section> }
 function Home() {
   const reduced = useReducedMotion()
+  const homeRef = useRef(null)
+  useEffect(() => {
+    const home = homeRef.current
+    if (reduced || !home || !('IntersectionObserver' in window)) return
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('motion-in')
+          observer.unobserve(entry.target)
+        }
+      })
+    }, { threshold: 0.15 })
+    home.querySelectorAll('.home-section-heading, .experience-panel, .feature-row, .home-spreads-heading, .home-spread-list, .home-faq-grid, .home-final-panel').forEach(element => observer.observe(element))
+    return () => observer.disconnect()
+  }, [reduced])
   const cards = ['the-moon', 'the-empress', 'the-star', 'the-sun', 'the-world']
-  return <>
+  return <div ref={homeRef}>
     <div className="home-announcement"><Sparkles size={14} aria-hidden="true" /> พื้นที่เล็ก ๆ สำหรับการทบทวนตัวเอง <span>✦</span> เปิดไพ่ได้โดยไม่ต้องสมัครสมาชิก</div>
     <section className="hero">
       <div className="container hero-inner">
@@ -98,7 +113,7 @@ function Home() {
     <section className="home-spreads"><div className="container"><p className="section-kicker">05 / CHOOSE YOUR SPREAD</p><div className="home-spreads-heading"><div><h2>เลือกมุมมอง<br /><em>ที่เหมาะกับคุณ</em></h2><p>แต่ละรูปแบบช่วยสำรวจคำถามเดียวกันในระดับความละเอียดที่ต่างกัน</p></div><Link className="text-link home-spreads-link" to="/categories">เริ่มเปิดไพ่ <ArrowRight size={16} aria-hidden="true" /></Link></div><div className="home-spread-list"><div><span>03</span><h3>ภาพรวมอย่างรวดเร็ว</h3><p>สถานการณ์ อุปสรรค และคำแนะนำ</p></div><div><span>05</span><h3>สำรวจให้ลึกขึ้น</h3><p>มองสาเหตุ จุดแข็ง และแนวทาง</p></div><div><span>10</span><h3>เซลติกครอส</h3><p>สำรวจเรื่องราวรอบด้านผ่านสิบตำแหน่ง</p></div></div></div></section>
     <section className="home-faq"><div className="container home-faq-grid"><div><p className="section-kicker">06 / GOOD TO KNOW</p><h2>ก่อนเริ่ม<br />เปิดไพ่</h2></div><div className="home-faq-list"><details><summary>ต้องเข้าสู่ระบบก่อนเปิดไพ่ไหม?</summary><p>คุณสามารถเปิดไพ่และอ่านความหมายได้โดยไม่ต้องเข้าสู่ระบบ หากต้องการคำทำนายแบบละเอียดให้เข้าสู่ระบบก่อน โดยไพ่ที่เปิดไว้ยังอยู่</p></details><details><summary>ควรเลือกไพ่กี่ใบ?</summary><p>ไพ่ 3 ใบเหมาะกับภาพรวม ส่วน 5 และ 10 ใบช่วยสำรวจรายละเอียดและมุมมองเพิ่มเติม</p></details><details><summary>ควรใช้คำอ่านอย่างไร?</summary><p>ใช้คำอ่านเป็นพื้นที่ทบทวนตนเองและพิจารณาร่วมกับข้อมูลจริง การตัดสินใจยังเป็นของคุณเสมอ</p></details></div></div></section>
     <section className="home-final"><div className="container"><div className="home-final-panel"><p className="section-kicker">A MOMENT FOR YOU</p><h2>พร้อมเริ่มต้น<br /><em>ในแบบของคุณหรือยัง?</em></h2><p>เลือกคำถาม แล้วให้ไพ่เป็นเพื่อนในการสำรวจอีกมุมหนึ่ง</p><div><Link className="button home-final-button" to="/categories">เริ่มสำรวจคำถาม <ArrowRight size={18} aria-hidden="true" /></Link><Link className="text-link" to="/history">ดูประวัติการเปิดไพ่ <ArrowRight size={16} aria-hidden="true" /></Link></div></div></div></section>
-  </>
+  </div>
 }
 function Categories() { const { setDraft } = useContext(Draft); const state = useRemote(getCategories); return <Page kicker="01 / CHOOSE A TOPIC" title="วันนี้อยากสำรวจเรื่องอะไร" lead="เลือกหัวข้อที่ใกล้เคียงกับเรื่องในใจของคุณ" back="/"><RemoteState state={state}>{rows => <div className="choice-grid">{rows.map(row => <Link key={row.id} className="choice" to="/questions" onClick={() => { sessionStorage.removeItem(PENDING_KEY); setDraft({ category: row }) }}><span className="choice-symbol"><Sparkles size={21} aria-hidden="true" /></span><h2>{row.name_th}</h2><p>{categoryDetails[row.slug] || 'เลือกคำถามที่เหมาะกับคุณ'}</p><span className="choice-action">เลือกหัวข้อนี้ <ArrowRight size={16} /></span></Link>)}</div>}</RemoteState></Page> }
 function Questions() { const { draft, setDraft } = useContext(Draft); const state = useRemote(() => draft.category ? getQuestions(draft.category.id) : Promise.resolve([]), [draft.category?.id]); if (!draft.category) return <Missing />; return <Page kicker="02 / YOUR QUESTION" title="เลือกคำถามที่ตรงใจ" lead={`หัวข้อ: ${draft.category.name_th}`} back="/categories"><RemoteState state={state}>{rows => <div className="question-list">{rows.map(row => <Link className="question-choice" to="/spreads" key={row.id} onClick={() => setDraft({ category: draft.category, question: row })}><span>{row.prompt_th}</span><ArrowRight size={18} aria-hidden="true" /></Link>)}</div>}</RemoteState></Page> }
