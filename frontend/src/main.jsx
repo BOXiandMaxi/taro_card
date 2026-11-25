@@ -125,7 +125,7 @@ function Home() {
           }, 700)
         }
         replaceCard(0)
-      }, 8000)
+      }, 3000)
     }
     const showInitial = index => {
       if (!active || document.hidden) return
