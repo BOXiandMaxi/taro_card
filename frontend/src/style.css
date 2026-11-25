@@ -376,12 +376,9 @@ a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid #a9
 @media (prefers-reduced-motion: no-preference){
   .hero-label,.hero h1,.hero-description,.hero-start,.hero-actions{animation:home-rise .75s cubic-bezier(.22,1,.36,1) both}
   .hero h1{animation-delay:.08s}.hero-description{animation-delay:.16s}.hero-start{animation-delay:.24s}.hero-actions{animation-delay:.3s}
-  .hero-deck img{--hero-card-y:0px;animation:home-card-fan 1.15s cubic-bezier(.2,.75,.25,1) both}
-  .hero-deck img:first-child{--hero-card-y:30px;animation-delay:.38s}
-  .hero-deck img:nth-child(2){--hero-card-y:10px;animation-delay:.48s}
-  .hero-deck img:nth-child(3){animation-delay:.58s}
-  .hero-deck img:nth-child(4){--hero-card-y:10px;animation-delay:.68s}
-  .hero-deck img:last-child{--hero-card-y:30px;animation-delay:.78s}
+  .hero-deck img{transition:opacity .7s ease}
+  .hero-deck img.hero-card-hidden{opacity:0}
+  .hero-deck img.hero-card-visible{opacity:1}
   .motion-in{animation:home-rise .75s cubic-bezier(.22,1,.36,1) both}
   .experience-panel.motion-in .experience-cards img{animation:home-card-lift .8s cubic-bezier(.22,1,.36,1) both}
   .experience-panel.motion-in .experience-cards>div:nth-child(2) img{animation-delay:.13s}

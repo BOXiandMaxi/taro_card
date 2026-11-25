@@ -91,15 +91,16 @@ function Home() {
   const reduced = useReducedMotion()
   const homeRef = useRef(null)
   const [cards, setCards] = useState(chooseHeroCards)
-  const [cardsFading, setCardsFading] = useState(false)
+  const [visibleCards, setVisibleCards] = useState([false, false, false, false, false])
   const cardsRef = useRef(cards)
   useEffect(() => {
-    if (reduced) { setCardsFading(false); return }
+    if (reduced) { setVisibleCards([true, true, true, true, true]); return }
     let timer
     let generation = 0
     let active = true
-    const schedule = () => {
-      if (document.hidden || !active) return
+    const setVisibility = (index, visible) => setVisibleCards(current => current.map((value, i) => i === index ? visible : value))
+    const scheduleCycle = () => {
+      if (!active || document.hidden) return
       timer = window.setTimeout(async () => {
         const current = ++generation
         const next = chooseHeroCards(cardsRef.current)
@@ -110,24 +111,36 @@ function Home() {
           image.src = heroCardUrl(card)
         })))
         if (!active || document.hidden || current !== generation) return
-        if (!loaded.every(Boolean)) { schedule(); return }
-        setCardsFading(true)
-        timer = window.setTimeout(() => {
-          cardsRef.current = next
-          setCards(next)
-          setCardsFading(false)
-          schedule()
-        }, 350)
-      }, 5000)
+        if (!loaded.every(Boolean)) { scheduleCycle(); return }
+        const replaceCard = index => {
+          if (!active || document.hidden || current !== generation) return
+          setVisibility(index, false)
+          timer = window.setTimeout(() => {
+            const updated = [...cardsRef.current]
+            updated[index] = next[index]
+            cardsRef.current = updated
+            setCards(updated)
+            setVisibility(index, true)
+            timer = window.setTimeout(() => index < 4 ? replaceCard(index + 1) : scheduleCycle(), 1050)
+          }, 700)
+        }
+        replaceCard(0)
+      }, 8000)
+    }
+    const showInitial = index => {
+      if (!active || document.hidden) return
+      setVisibility(index, true)
+      timer = window.setTimeout(() => index < 4 ? showInitial(index + 1) : scheduleCycle(), 850)
     }
     const onVisibilityChange = () => {
       generation++
       window.clearTimeout(timer)
-      setCardsFading(false)
-      if (!document.hidden) schedule()
+      setVisibleCards([true, true, true, true, true])
+      if (!document.hidden) scheduleCycle()
     }
     document.addEventListener('visibilitychange', onVisibilityChange)
-    schedule()
+    if (!document.hidden) timer = window.setTimeout(() => showInitial(0), 400)
+    else setVisibleCards([true, true, true, true, true])
     return () => {
       active = false
       generation++
@@ -158,9 +171,9 @@ function Home() {
         <p className="hero-description">เริ่มจากคำถามของคุณ เปิดไพ่ในจังหวะของตัวเอง และค้นพบมุมมองใหม่ไปด้วยกัน</p>
         <Link className="hero-start" to="/categories"><span><strong>วันนี้อยากสำรวจเรื่องอะไร?</strong><small>เลือกหัวข้อและคำถามที่ตรงใจคุณ</small></span><span className="hero-start-action">เริ่มเปิดไพ่ <ArrowRight size={18} aria-hidden="true" /></span></Link>
         <div className="hero-actions"><Link className="text-link light-link" to="/history">ดูประวัติการเปิดไพ่ <ArrowRight size={16} aria-hidden="true" /></Link></div>
-        <motion.div className="hero-deck" aria-hidden="true" initial={reduced ? false : { opacity: 0, y: 12 }} animate={{ opacity: cardsFading ? 0 : 1, y: 0 }} transition={{ duration: .35 }}>
-          {cards.map((card, index) => <img key={index} src={heroCardUrl(card)} alt="" />)}
-        </motion.div>
+        <div className="hero-deck" aria-hidden="true">
+          {cards.map((card, index) => <img key={index} className={visibleCards[index] ? "hero-card-visible" : "hero-card-hidden"} src={heroCardUrl(card)} alt="" />)}
+        </div>
       </div>
     </section>
     <section className="home-topics"><div className="container"><div className="home-section-heading"><p className="section-kicker">01 / FIND YOUR QUESTION</p><h2>ทุกคำถามมีพื้นที่<br /><em>ให้คุณได้สำรวจ</em></h2><p>เลือกเรื่องที่อยู่ในใจ แล้วเริ่มจากคำถามที่ใกล้ตัวคุณที่สุด</p></div><div className="home-topic-grid">{[['01','ชีวิตประจำวัน','มองเรื่องเล็ก ๆ ในแต่ละวัน'],['02','การเงิน','ทบทวนการวางแผน'],['03','ความรัก','สำรวจความสัมพันธ์'],['04','การงาน','มองเส้นทางและโอกาส'],['05','ข้อความจากไพ่','รับฟังสิ่งที่อยากให้ใส่ใจ']].map(([number, title, description]) => <div className="home-topic" key={number}><span>{number}</span><Sparkles size={20} aria-hidden="true" /><h3>{title}</h3><p>{description}</p></div>)}</div><Link className="text-link home-section-link" to="/categories">เลือกเรื่องที่อยากสำรวจ <ArrowRight size={16} aria-hidden="true" /></Link></div></section>
