@@ -221,3 +221,111 @@ button{font:inherit;cursor:pointer}button:focus-visible,summary:focus-visible{ou
   .footer-details{gap:20px}.footer-bottom{align-items:flex-start;flex-wrap:wrap}
 }
 @media(max-width:380px){.footer-details{grid-template-columns:1fr;gap:26px}.footer-details h2{margin-bottom:10px}}
+
+/* A calmer editorial system for the shared shell and reading journey. */
+:root{color:#191d31;background:#faf9f5}
+body{background:#faf9f5}
+.container,.header-inner{width:min(1160px,calc(100% - 48px))}
+.site-header{background:#faf9f5;color:#1b2037;border-bottom:1px solid #e7e5de}
+.header-inner{min-height:76px}
+.brand-mark{width:40px;height:40px;border-color:#b49a64;color:#8b713d}
+.brand small{color:#87744c}
+.site-header nav{gap:8px}
+.site-header .nav-link{padding:10px 15px;border:0;border-radius:999px;color:#4b5062;font-size:14px}
+.site-header .nav-link svg{color:#777385}
+.site-header .nav-link:hover,.site-header .nav-link.active{background:#eeede8;color:#171a35}
+.site-header .nav-link.active svg{color:#82692f}
+.site-header .nav-link:last-child{background:#191d34;color:#fff}
+.site-header .nav-link:last-child svg{color:#e2ca94}
+.site-header .nav-link:last-child:hover,.site-header .nav-link:last-child.active{background:#343955;color:#fff}
+.button{border-radius:999px;min-height:50px;padding:12px 22px;transition:background-color .18s,color .18s,border-color .18s}
+.button-gold{background:#1c2038;color:#fff}
+.button-gold:hover{background:#333852;color:#fff}
+.button-outline{border-color:#a39bad;color:#343149}
+.button-outline:hover,.choice-button:hover{background:#eeedf1}
+.hero{background:#f3f3f1;color:#1b2036;overflow:hidden}
+.hero-inner{padding-top:76px;text-align:center}
+.hero-label{display:inline-flex;align-items:center;gap:8px;margin:0;color:#766237;font-size:13px;font-weight:700}
+.hero h1{margin:22px 0 16px;font-size:clamp(42px,6vw,76px);line-height:1.3;letter-spacing:-.035em;font-weight:700}
+.hero h1 em,.home-spreads h2 em{color:#967c49;font-style:normal}
+.hero-description{max-width:610px;margin:0 auto;color:#585d6e;font-size:16px;line-height:1.9}
+.hero-actions{justify-content:center;margin-top:28px;gap:24px}
+.light-link{color:#34394d}
+.hero-deck{height:255px;display:flex;justify-content:center;align-items:flex-start;margin:62px auto -32px}
+.hero-deck img{width:clamp(88px,12vw,148px);height:auto;aspect-ratio:3/5;object-fit:contain;border-radius:7px;box-shadow:0 10px 25px #1b20352c;transform:rotate(var(--hero-card-angle));margin-left:-10px}
+.hero-deck img:first-child{--hero-card-angle:-13deg;margin-left:0;transform:translateY(30px) rotate(var(--hero-card-angle))}
+.hero-deck img:nth-child(2){--hero-card-angle:-6deg;transform:translateY(10px) rotate(var(--hero-card-angle))}
+.hero-deck img:nth-child(3){--hero-card-angle:0deg}
+.hero-deck img:nth-child(4){--hero-card-angle:6deg;transform:translateY(10px) rotate(var(--hero-card-angle))}
+.hero-deck img:last-child{--hero-card-angle:13deg;transform:translateY(30px) rotate(var(--hero-card-angle))}
+.intro-section{padding:108px 0;background:#fff}
+.intro-grid{grid-template-columns:1fr 1fr;gap:90px}
+.section-kicker{font-size:11px;letter-spacing:.14em;color:#836c3e}
+.intro-section h2,.home-spreads h2,.home-faq h2{font-size:clamp(32px,4vw,48px);line-height:1.35;letter-spacing:-.025em;margin:0;color:#1b2036}
+.intro-section .intro-copy{max-width:390px;margin-top:20px}
+.steps{margin-top:0;border-color:#e8e7e1}
+.steps>div{padding:20px 0;gap:22px;border-color:#e8e7e1}
+.steps span{min-width:23px;color:#927846}
+.steps h3{font-size:16px;color:#202437}
+.steps p{max-width:420px;margin-top:6px;font-size:14px;line-height:1.8;color:#646979}
+.home-spreads{background:#191d34;color:#f9f8f4;padding:100px 0}
+.home-spreads .section-kicker{color:#d0b77f}
+.home-spreads-heading{display:flex;align-items:end;justify-content:space-between;gap:24px}
+.home-spreads h2{color:#fff}.home-spreads h2 em{color:#dfc795}
+.home-spreads-heading p{max-width:440px;margin:18px 0 0;color:#c2c3ce;line-height:1.8}
+.home-spreads-link{color:#eee2c6;white-space:nowrap;padding:10px 0}
+.home-spread-list{display:grid;grid-template-columns:repeat(3,1fr);margin-top:55px;border-top:1px solid #ffffff2b;border-bottom:1px solid #ffffff2b}
+.home-spread-list>div{padding:27px 26px 28px 0}.home-spread-list>div+div{padding-left:26px;border-left:1px solid #ffffff2b}
+.home-spread-list span{color:#d3bc89;font-size:12px;letter-spacing:.12em;font-weight:700}
+.home-spread-list h3{color:#fff;font-size:18px;margin:20px 0 6px}.home-spread-list p{margin:0;color:#c2c3ce;font-size:14px;line-height:1.8}
+.home-faq{padding:100px 0 110px;background:#fff}
+.home-faq-grid{display:grid;grid-template-columns:1fr 1.2fr;gap:70px}
+.home-faq-list{border-top:1px solid #e7e6e1}
+.home-faq-list details{border-bottom:1px solid #e7e6e1}
+.home-faq-list summary{position:relative;cursor:pointer;list-style:none;padding:22px 36px 22px 0;font-size:16px;font-weight:650;color:#252a3f}
+.home-faq-list summary::-webkit-details-marker{display:none}
+.home-faq-list summary::after{content:'+';position:absolute;right:4px;font-size:22px;line-height:1;color:#836c3e}
+.home-faq-list details[open] summary::after{content:'−'}
+.home-faq-list p{margin:0;padding:0 30px 22px 0;color:#5d6272;font-size:14px;line-height:1.9}
+.placeholder-section{padding:56px 0 100px}
+.placeholder-section h1{font-size:clamp(32px,4vw,46px);line-height:1.4;letter-spacing:-.02em}
+.back-link{margin-bottom:48px}
+.choice,.question-choice,.account-form,.account-panel,.history-item,.empty-state,.revealed-item,.analytics-totals>div{border-radius:16px;border-color:#e4e2dc;background:#fff}
+.choice{padding:28px;transition:border-color .18s,transform .18s,box-shadow .18s}
+@media(hover:hover){.choice:hover{border-color:#baa47a;transform:translateY(-2px);box-shadow:0 8px 24px #1b20350d}}
+.choice h2{color:#1c2038}.choice p,.page-lead{color:#5d6272}
+.choice-action,.account-link,.revealed-item summary,.interpretation summary{color:#4b4662}
+.question-choice{padding:20px 22px;transition:border-color .18s,background-color .18s}
+.question-choice:hover{background:#fff;border-color:#b69d70}
+.empty-state{padding:48px 24px}
+.reading-summary{border-radius:16px}
+.revealed-item{box-shadow:none}
+.deck-selection[data-phase="stacked"] .deck-stage,.deck-selection[data-phase="shuffling"] .deck-stage,.deck-selection[data-phase="preparing"] .deck-stage{border-radius:20px}
+.account-form input{border-radius:9px}.error-message{border-radius:10px}
+.site-footer{background:#171a2f}
+.footer-content{padding-top:70px;padding-bottom:56px}
+a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid #a97c25;outline-offset:4px}
+@media(max-width:700px){
+  .container,.header-inner{width:calc(100% - 36px)}
+  .header-inner{padding-top:14px}.site-header nav{margin-top:12px;gap:2px}
+  .site-header .nav-link{min-height:56px;padding:8px 1px;font-size:12px;border-radius:10px}
+  .hero-inner{padding-top:54px}.hero h1{font-size:clamp(36px,9vw,49px)}
+  .hero-description{font-size:15px}.hero-actions{gap:14px 20px}
+  .hero-deck{height:165px;margin-top:48px;margin-bottom:-20px}
+  .hero-deck img{width:clamp(72px,18vw,110px);margin-left:-12px}
+  .intro-section,.home-spreads,.home-faq{padding:72px 0}
+  .intro-grid,.home-faq-grid{grid-template-columns:1fr;gap:34px}
+  .intro-section h2,.home-spreads h2,.home-faq h2{font-size:34px}
+  .home-spreads-heading{align-items:start;flex-direction:column;gap:12px}
+  .home-spread-list{grid-template-columns:1fr;margin-top:30px}
+  .home-spread-list>div,.home-spread-list>div+div{padding:19px 0;border-left:0}
+  .home-spread-list>div+div{border-top:1px solid #ffffff2b}
+  .home-spread-list h3{margin:8px 0 4px}
+  .placeholder-section{padding:34px 0 76px}.back-link{margin-bottom:40px}
+  .choice{padding:22px}.pick-actions{margin-left:-18px;margin-right:-18px;padding-left:18px;padding-right:18px}
+  .deck-selection .pick-actions{margin-left:-18px;margin-right:-18px}
+  .footer-content{padding-top:48px;padding-bottom:36px}
+}
+@media(prefers-reduced-motion:reduce){.button,.choice,.question-choice{transition:none}}
+.hero-deck{height:auto;min-height:275px;margin-bottom:0;padding-bottom:36px}
+@media(max-width:700px){.hero-deck{min-height:210px;margin-bottom:0;padding-bottom:32px}}
