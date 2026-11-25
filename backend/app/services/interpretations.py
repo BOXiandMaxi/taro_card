@@ -26,6 +26,25 @@ CATEGORY_MEANING_FIELDS = {
     "career": "career_meaning",
     "guidance": "general_guidance_meaning",
 }
+# Match stored labels so a different layout cannot inherit a role by position number alone.
+POSITION_ROLE_DESCRIPTIONS = {
+    "สถานการณ์ปัจจุบัน": "อธิบายสภาพของเรื่องที่ถามในตอนนี้ เพื่อเป็นจุดตั้งต้นของคำอ่าน",
+    "อุปสรรคหรืออิทธิพลหลัก": "ชี้แรงกดดันหรือปัจจัยหลักที่ทำให้สถานการณ์เดินหน้าได้ยากหรือเปลี่ยนทิศ",
+    "คำแนะนำ": "บอกสิ่งที่ผู้ถามลองทำหรือสังเกตต่อได้ เพื่อตอบสนองต่อสถานการณ์และอุปสรรค",
+    "สาเหตุที่เป็นรากฐาน": "ชี้เงื่อนไขหรือรูปแบบที่อาจอยู่เบื้องหลังสถานการณ์ปัจจุบัน",
+    "อุปสรรคหลัก": "ระบุปัญหาเฉพาะที่ขัดขวางความคืบหน้า และดูว่ารากฐานทำให้อุปสรรคคงอยู่หรือไม่",
+    "จุดแข็งและทรัพยากรที่มี": "มองหาทักษะ คนช่วย หรือทรัพยากรที่อาจใช้รับมืออุปสรรค",
+    "คำแนะนำและแนวทางที่เป็นไปได้": "เสนอขั้นตอนที่ใช้จุดแข็งหรือทรัพยากรเพื่อรับมืออุปสรรค",
+    "อิทธิพลที่เข้ามาขวาง": "แสดงแรงที่เข้ามาปะทะกับสถานการณ์ปัจจุบันและทำให้โจทย์ซับซ้อนขึ้น",
+    "เป้าหมายที่ตระหนักรู้": "สำรวจสิ่งที่ผู้ถามอาจกำลังมุ่งหวังอย่างรู้ตัวในเรื่องนี้",
+    "รากฐานของสถานการณ์": "พิจารณาเงื่อนไขที่หล่อเลี้ยงสถานการณ์อยู่เบื้องหลัง แยกจากเป้าหมายที่ผู้ถามเล็งไว้",
+    "อดีตที่ผ่านมาไม่นาน": "มองเหตุการณ์หรือพฤติกรรมก่อนหน้าในช่วงใกล้ ๆ ที่อาจยังมีผลกับเรื่องปัจจุบัน",
+    "อนาคตอันใกล้": "อ่านพัฒนาการระยะถัดไปที่อาจเห็นหากเงื่อนไขปัจจุบันยังดำเนินต่อ",
+    "มุมมองต่อตนเอง": "สำรวจท่าทีที่ผู้ถามอาจมีต่อตนเองและผลของท่าทีนั้นต่อทางเลือก",
+    "สภาพแวดล้อมรอบตัว": "พิจารณาปัจจัยภายนอก รวมถึงเงื่อนไขหรือการสนับสนุนที่อาจมีผลต่อทางเลือก",
+    "ความหวังและความกลัว": "มองความคาดหวังหรือความกังวลที่อาจทำให้ผู้ถามให้น้ำหนักกับบางทางเลือก",
+    "ทิศทางที่เป็นไปได้": "ประมวลทิศทางจากทั้งผังและบอกเงื่อนไขที่อาจทำให้ทิศทางเปลี่ยนได้",
+}
 CATEGORY_ACTIONS = {
     "daily-life": "เลือกเรื่องที่จัดการได้วันนี้หนึ่งเรื่อง แล้วกันเวลาให้ขั้นแรก",
     "finance": "จดตัวเลขและเงื่อนไขที่เกี่ยวกับคำถาม แล้ววงข้อมูลที่ต้องตรวจสอบก่อนตัดสินใจ",
@@ -161,7 +180,7 @@ def load_input(
         keywords = keywords[:8] if isinstance(keywords, list) else []
         fixed_cards.append(FixedCard(
             position=position.position_number, position_name=position.meaning_th,
-            position_meaning=position.meaning_th,
+            position_meaning=POSITION_ROLE_DESCRIPTIONS.get(position.meaning_th, position.meaning_th),
             card_id=item.card_id, name_en=card.name_en, name_th=card.name_th,
             orientation=item.orientation,
             keywords=[
@@ -308,7 +327,7 @@ def database_interpretation(payload: InterpretationInput) -> InterpretationResul
     card_interpretations = []
     for card in payload.cards:
         orientation = "ตั้งตรง" if card.orientation == "upright" else "กลับหัว"
-        label = f"ไพ่{card.name_th}{orientation}ในตำแหน่ง{card.position_meaning}"
+        label = f"ไพ่{card.name_th}{orientation}ในตำแหน่ง{card.position_name}"
         if card.orientation_meaning:
             parts = [label, card.orientation_meaning]
         elif card.keywords:

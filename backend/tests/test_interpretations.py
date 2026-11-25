@@ -23,6 +23,11 @@ from database.seeds.reference_data import CATEGORIES, QUESTIONS
 from test_reading_engine import ROOT, app, client as guest_client, create, database
 
 CATEGORY_FIELDS = ["daily_life_meaning", "finance_meaning", "love_meaning", "career_meaning", "general_guidance_meaning"]
+KEY_POSITION_ROLES = {
+    1: {2: "แรงกดดัน", 3: "ลองทำหรือสังเกต"},
+    2: {4: "ทรัพยากรที่อาจใช้", 5: "เสนอขั้นตอน"},
+    3: {3: "มุ่งหวังอย่างรู้ตัว", 4: "อยู่เบื้องหลัง", 5: "ก่อนหน้า", 6: "ระยะถัดไป", 10: "จากทั้งผัง"},
+}
 THAI_CARD_PROSE = (
     # The first two share an opening but give different advice and must pass.
     "ลองสังเกตว่าส่วนไหนของสถานการณ์ที่คุณจัดการได้ในตอนนี้",
@@ -268,8 +273,11 @@ def test_mock_ai_all_spreads_and_categories(client, database, monkeypatch, categ
         for fixed, saved in zip(payload["cards"], cards, strict=True):
             assert fixed["card_id"] == saved["card"]["id"]
             assert fixed["position"] == saved["position_number"]
-            assert fixed["position_meaning"] == saved["position"]["meaning_th"]
             assert fixed["position_name"] == saved["position"]["meaning_th"]
+            assert fixed["position_meaning"] != fixed["position_name"]
+            role = KEY_POSITION_ROLES[spread].get(fixed["position"])
+            if role:
+                assert role in fixed["position_meaning"]
             assert fixed["orientation"] == saved["orientation"]
             assert fixed["orientation_meaning"] == saved["meaning"]["description"]
             assert fixed["category_meaning"] == MEANINGS[fixed["card_id"]][CATEGORY_FIELDS[category - 1]]
@@ -457,6 +465,7 @@ def test_fallback_explains_spread_and_uses_selected_orientation(client, monkeypa
         assert entry["card_id"] == card["card"]["id"]
         assert entry["position"] == card["position_number"] and entry["orientation"] == card["orientation"]
         assert entry["position_name"] == card["position"]["meaning_th"]
+        assert f"ในตำแหน่ง{entry['position_name']}" in prose
         assert prose.index(selected) < prose.index(meaning["career_meaning"])
         assert other not in prose
         assert selected not in connections
