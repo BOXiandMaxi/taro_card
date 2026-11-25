@@ -75,9 +75,66 @@ function Footer() {
   </div></footer>
 }
 function Page({ kicker, title, lead, back, children }) { return <section className="placeholder-section"><div className="container placeholder-container">{back && <Link className="back-link" to={back}><ArrowLeft size={16} aria-hidden="true" /> ย้อนกลับ</Link>}<p className="section-kicker">{kicker}</p><h1>{title}</h1>{lead && <p className="page-lead">{lead}</p>}{children}</div></section> }
+const HERO_MAJOR_CARDS = ['the-fool', 'the-magician', 'the-high-priestess', 'the-empress', 'the-emperor', 'the-hierophant', 'the-lovers', 'the-chariot', 'strength', 'the-hermit', 'wheel-of-fortune', 'justice', 'the-hanged-man', 'death', 'temperance', 'the-devil', 'the-tower', 'the-star', 'the-moon', 'the-sun', 'judgement', 'the-world']
+const HERO_RANKS = ['ace', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'page', 'knight', 'queen', 'king']
+const HERO_CARDS = [...HERO_MAJOR_CARDS, ...['wands', 'cups', 'swords', 'pentacles'].flatMap(suit => HERO_RANKS.map(rank => `${rank}-of-${suit}`))]
+const heroCardUrl = card => `${import.meta.env.BASE_URL}assets/cards/rws/${card}.webp`
+function chooseHeroCards(previous = []) {
+  const pool = HERO_CARDS.filter(card => !previous.includes(card))
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[pool[i], pool[j]] = [pool[j], pool[i]]
+  }
+  return pool.slice(0, 5)
+}
 function Home() {
   const reduced = useReducedMotion()
   const homeRef = useRef(null)
+  const [cards, setCards] = useState(chooseHeroCards)
+  const [cardsFading, setCardsFading] = useState(false)
+  const cardsRef = useRef(cards)
+  useEffect(() => {
+    if (reduced) { setCardsFading(false); return }
+    let timer
+    let generation = 0
+    let active = true
+    const schedule = () => {
+      if (document.hidden || !active) return
+      timer = window.setTimeout(async () => {
+        const current = ++generation
+        const next = chooseHeroCards(cardsRef.current)
+        const loaded = await Promise.all(next.map(card => new Promise(resolve => {
+          const image = new Image()
+          image.onload = () => resolve(true)
+          image.onerror = () => resolve(false)
+          image.src = heroCardUrl(card)
+        })))
+        if (!active || document.hidden || current !== generation) return
+        if (!loaded.every(Boolean)) { schedule(); return }
+        setCardsFading(true)
+        timer = window.setTimeout(() => {
+          cardsRef.current = next
+          setCards(next)
+          setCardsFading(false)
+          schedule()
+        }, 350)
+      }, 5000)
+    }
+    const onVisibilityChange = () => {
+      generation++
+      window.clearTimeout(timer)
+      setCardsFading(false)
+      if (!document.hidden) schedule()
+    }
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    schedule()
+    return () => {
+      active = false
+      generation++
+      window.clearTimeout(timer)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+    }
+  }, [reduced])
   useEffect(() => {
     const home = homeRef.current
     if (reduced || !home || !('IntersectionObserver' in window)) return
@@ -92,7 +149,6 @@ function Home() {
     home.querySelectorAll('.home-section-heading, .experience-panel, .feature-row, .home-spreads-heading, .home-spread-list, .home-faq-grid, .home-final-panel').forEach(element => observer.observe(element))
     return () => observer.disconnect()
   }, [reduced])
-  const cards = ['the-moon', 'the-empress', 'the-star', 'the-sun', 'the-world']
   return <div ref={homeRef}>
     <div className="home-announcement"><Sparkles size={14} aria-hidden="true" /> พื้นที่เล็ก ๆ สำหรับการทบทวนตัวเอง <span>✦</span> เปิดไพ่ได้โดยไม่ต้องสมัครสมาชิก</div>
     <section className="hero">
@@ -102,8 +158,8 @@ function Home() {
         <p className="hero-description">เริ่มจากคำถามของคุณ เปิดไพ่ในจังหวะของตัวเอง และค้นพบมุมมองใหม่ไปด้วยกัน</p>
         <Link className="hero-start" to="/categories"><span><strong>วันนี้อยากสำรวจเรื่องอะไร?</strong><small>เลือกหัวข้อและคำถามที่ตรงใจคุณ</small></span><span className="hero-start-action">เริ่มเปิดไพ่ <ArrowRight size={18} aria-hidden="true" /></span></Link>
         <div className="hero-actions"><Link className="text-link light-link" to="/history">ดูประวัติการเปิดไพ่ <ArrowRight size={16} aria-hidden="true" /></Link></div>
-        <motion.div className="hero-deck" aria-hidden="true" initial={reduced ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
-          {cards.map(card => <img key={card} src={`${import.meta.env.BASE_URL}assets/cards/rws/${card}.webp`} alt="" />)}
+        <motion.div className="hero-deck" aria-hidden="true" initial={reduced ? false : { opacity: 0, y: 12 }} animate={{ opacity: cardsFading ? 0 : 1, y: 0 }} transition={{ duration: .35 }}>
+          {cards.map((card, index) => <img key={index} src={heroCardUrl(card)} alt="" />)}
         </motion.div>
       </div>
     </section>
