@@ -185,6 +185,7 @@ button{font:inherit;cursor:pointer}button:focus-visible,summary:focus-visible{ou
 .analytics-breakdown{font-size:14px;color:#51435f}
 .analytics-section{margin-top:32px}
 .analytics-section h2{font-size:19px;margin:0 0 14px}
+.analytics-visits-heading{font-size:19px;margin:32px 0 14px}
 .analytics-section>p{color:#615e6c}
 .analytics-table-wrap{overflow-x:auto;border:1px solid #e1ddd4;background:#fffefa}
 .analytics-table-wrap table{width:100%;border-collapse:collapse;text-align:left;font-size:14px}

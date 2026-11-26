@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from decimal import Decimal
 from uuid import uuid4
 
 from fastapi.testclient import TestClient
@@ -6,7 +7,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.api.routes import analytics as analytics_routes
-from app.models import AnalyticsPageView, User
+from app.models import AIUsageLog, AnalyticsPageView, User
 from app.services import analytics
 from test_accounts import ORIGIN, PASSWORD, auth_settings, csrf, register
 from test_reading_engine import app, client, database
@@ -86,6 +87,34 @@ def test_views_deduplicate_and_group_by_thailand_day(app, client, database, monk
     ]
     today = client.get(REPORT, params={"days": 1}).json()
     assert (today["page_views"], today["browser_days"]) == (1, 1)
+
+
+def test_ai_usage_totals_across_thailand_midnight(client, database, monkeypatch):
+    start = datetime(2027, 1, 1, 17)
+    monkeypatch.setattr(analytics_routes, "utc_now", lambda: start + timedelta(hours=12))
+    account = register(client).json()
+    set_role(database, account["id"], "admin")
+    rows = [
+        (start - timedelta(seconds=1), "success", 10, 2, "0.001"),
+        (start, "success", 140, 40, "0.01234567"),
+        (start + timedelta(hours=1), "invalid_response", 70, 10, "0.00000002"),
+        (start + timedelta(hours=2), "started", 0, 0, "0"),
+        (start + timedelta(days=1), "success", 8000, 500, "1.5"),
+    ]
+    with Session(database) as session, session.begin():
+        for created, status, input_tokens, output_tokens, cost in rows:
+            session.add(AIUsageLog(
+                provider="mock", model="fixture", status=status, created_at=created,
+                input_tokens=input_tokens, output_tokens=output_tokens, cost_estimate=Decimal(cost),
+            ))
+    response = client.get(REPORT, params={"days": 1})
+    assert response.status_code == 200
+    assert response.json()["ai_usage"] == {
+        "total_attempts": 3, "successful_attempts": 1, "failed_attempts": 1,
+        "started_attempts": 1, "input_tokens": 210, "output_tokens": 50,
+        "estimated_cost_usd": "0.01234569",
+    }
+    assert client.get(REPORT, params={"days": 7}).json()["ai_usage"]["total_attempts"] == 4
 
 
 def test_collection_filters_and_limits_before_database(client, database, monkeypatch):

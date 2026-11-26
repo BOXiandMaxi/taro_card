@@ -12,7 +12,7 @@ from sqlalchemy import case, delete, distinct, func, select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
-from app.models import AnalyticsPageView
+from app.models import AIUsageLog, AnalyticsPageView
 from app.services.auth import TOKEN_PATTERN, client_hash
 
 REPORT_TIMEZONE = timezone(timedelta(hours=7), "Asia/Bangkok")
@@ -105,6 +105,38 @@ def browser_hash(request: Request, response: Response, now: datetime) -> str:
     return sha256(f"{day.isoformat()}:{token}".encode()).hexdigest()
 
 
+def summarize_ai_usage(session: Session, first: date, last: date) -> dict:
+    def utc_midnight(local_day: date) -> datetime:
+        return (
+            datetime.combine(local_day, time.min, tzinfo=REPORT_TIMEZONE)
+            .astimezone(timezone.utc)
+            .replace(tzinfo=None)
+        )
+
+    usage = AIUsageLog
+    start = utc_midnight(first)
+    end = utc_midnight(last + timedelta(days=1))
+    total, success, started, input_tokens, output_tokens, cost = session.execute(
+        select(
+            func.count(),
+            func.count(case((usage.status == "success", 1))),
+            func.count(case((usage.status == "started", 1))),
+            func.sum(usage.input_tokens),
+            func.sum(usage.output_tokens),
+            func.sum(usage.cost_estimate),
+        ).where(usage.created_at >= start, usage.created_at < end)
+    ).one()
+    return {
+        "total_attempts": total,
+        "successful_attempts": success,
+        "failed_attempts": total - success - started,
+        "started_attempts": started,
+        "input_tokens": input_tokens or 0,
+        "output_tokens": output_tokens or 0,
+        "estimated_cost_usd": f"{cost or 0:.8f}",
+    }
+
+
 def summarize(session: Session, day: date, days: int) -> dict:
     first = report_start(day, days)
     views = AnalyticsPageView
@@ -142,4 +174,5 @@ def summarize(session: Session, day: date, days: int) -> dict:
         "guest_views": page_views - signed_in_views,
         "daily": daily,
         "top_pages": [{"route_key": route_key, "page_views": count} for route_key, count in pages],
+        "ai_usage": summarize_ai_usage(session, first, day),
     }

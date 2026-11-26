@@ -614,7 +614,7 @@ function Analytics() {
   const [days, setDays] = useState(7)
   const state = useRemote(() => user?.role === 'admin' ? getAnalytics(days) : Promise.resolve(null), [user?.id, user?.role, days])
   const data = state.data
-  return <Page kicker="ADMIN" title="สถิติเข้าชม" lead="ดูภาพรวมการเปิดหน้าเว็บตามเวลาไทย" back="/account">
+  return <Page kicker="ADMIN" title="สถิติผู้ดูแล" lead="ดูภาพรวมการเข้าชมและการใช้งาน AI ตามเวลาไทย" back="/account">
     {!user ? <div className="empty-state"><p>กรุณาเข้าสู่ระบบด้วยบัญชีผู้ดูแล</p><Link className="button button-outline" to="/login">เข้าสู่ระบบ</Link></div>
       : user.role !== 'admin' ? <div className="empty-state" role="alert"><p>บัญชีนี้ไม่มีสิทธิ์ดูสถิติ</p></div>
       : <>
@@ -624,6 +624,23 @@ function Analytics() {
         {state.loading ? <div className="empty-state" role="status">กำลังโหลดสถิติ…</div>
           : state.error ? <div className="empty-state" role="alert"><p>{state.error.response?.status === 403 ? 'บัญชีนี้ไม่มีสิทธิ์ดูสถิติ' : state.error.response?.status === 401 ? 'เซสชันหมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง' : 'โหลดสถิติไม่สำเร็จ กรุณาลองอีกครั้ง'}</p>{![401, 403].includes(state.error.response?.status) && <button className="button button-outline" onClick={state.retry}>ลองอีกครั้ง</button>}</div>
           : data && <div className="analytics-report">
+            <section className="analytics-section" aria-labelledby="ai-usage-heading">
+              <h2 id="ai-usage-heading">การใช้งาน AI</h2>
+              {!data.ai_usage ? <p>ยังไม่สามารถแสดงข้อมูลการใช้งาน AI ได้</p> : data.ai_usage.total_attempts === 0 ? <p>ยังไม่มีการเรียกใช้ AI ในช่วงเวลานี้</p> : <>
+                <p className="analytics-note">จำนวนครั้งรวมการลองเรียกซ้ำของระบบ</p>
+                <div className="analytics-table-wrap"><table><tbody>
+                  <tr><th scope="row">เรียกใช้ทั้งหมด</th><td>{data.ai_usage.total_attempts.toLocaleString('th-TH')} ครั้ง</td></tr>
+                  <tr><th scope="row">สำเร็จ</th><td>{data.ai_usage.successful_attempts.toLocaleString('th-TH')} ครั้ง</td></tr>
+                  <tr><th scope="row">ไม่สำเร็จ</th><td>{data.ai_usage.failed_attempts.toLocaleString('th-TH')} ครั้ง</td></tr>
+                  <tr><th scope="row">เริ่มแล้ว ยังไม่มีผล</th><td>{data.ai_usage.started_attempts.toLocaleString('th-TH')} ครั้ง</td></tr>
+                  <tr><th scope="row">Input tokens</th><td>{data.ai_usage.input_tokens.toLocaleString('th-TH')}</td></tr>
+                  <tr><th scope="row">Output tokens</th><td>{data.ai_usage.output_tokens.toLocaleString('th-TH')}</td></tr>
+                  <tr><th scope="row">ค่าใช้จ่ายโดยประมาณ</th><td>${data.ai_usage.estimated_cost_usd} USD</td></tr>
+                </tbody></table></div>
+                <p className="analytics-note">ค่าใช้จ่ายอ้างอิงจากข้อมูลที่บันทึกไว้ และอาจไม่รวมการเรียกที่ยังไม่ได้กำหนดราคา</p>
+              </>}
+            </section>
+            <h2 className="analytics-visits-heading">การเข้าชมเว็บไซต์</h2>
             <div className="analytics-totals" aria-label="ภาพรวมสถิติ">
               <div><span>ยอดเปิดหน้า</span><strong>{data.page_views.toLocaleString('th-TH')}</strong><small>ครั้ง</small></div>
               <div><span>เบราว์เซอร์รายวันโดยประมาณ</span><strong>{data.browser_days.toLocaleString('th-TH')}</strong><small>{days === 1 ? 'เบราว์เซอร์' : 'รวมรายวัน'}</small></div>
