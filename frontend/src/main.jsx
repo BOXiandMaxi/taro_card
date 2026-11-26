@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Link, Navigate, NavLink, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, ArrowRight, CircleHelp, History as HistoryIcon, Home as HomeIcon, Layers, Mail, MessageCircle, MoonStar, RefreshCw, Sparkles, UserRound } from 'lucide-react'
@@ -26,12 +27,12 @@ const categoryDetails = {
 }
 const spreadDetails = { 3: 'มองภาพรวมอย่างรวดเร็ว ผ่านสถานการณ์ อุปสรรค และคำแนะนำ', 5: 'สำรวจรายละเอียด สาเหตุ อุปสรรค จุดแข็ง และแนวทาง', 10: 'เซลติกครอส สำรวจสถานการณ์รอบด้านผ่านไพ่สิบตำแหน่ง' }
 
-function useRemote(loader, dependencies = []) {
-  const [state, setState] = useState({ loading: true, data: null, error: false })
+function useRemote(loader, dependencies = [], initialData = null) {
+  const [state, setState] = useState({ loading: true, data: initialData, error: false })
   const [attempt, setAttempt] = useState(0)
   useEffect(() => {
     let active = true
-    setState({ loading: true, data: null, error: false })
+    setState({ loading: true, data: attempt === 0 ? initialData : null, error: false })
     Promise.resolve().then(loader).then(data => { if (active) setState({ loading: false, data, error: false }) }).catch(error => { if (active) setState({ loading: false, data: null, error }) })
     return () => { active = false }
   }, [...dependencies, attempt])
@@ -397,7 +398,13 @@ function DeckTable({ draft }) {
 function ReadingPage({ result = false }) {
   const { id } = useParams()
   const { user, setIdentity } = useContext(Auth)
-  const state = useRemote(() => getReading(id), [id])
+  const location = useLocation()
+  const reduced = useReducedMotion()
+  const initialReading = result && location.state?.reading?.id === id && location.state?.identity === (user?.id ?? null) ? location.state.reading : null
+  const fromReveal = useRef(Boolean(initialReading))
+  const interpretationRef = useRef(null)
+  const scrolledToInterpretation = useRef(false)
+  const state = useRemote(() => getReading(id), [id], initialReading)
   const [revealing, setRevealing] = useState(null)
   const [revealError, setRevealError] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -407,6 +414,10 @@ function ReadingPage({ result = false }) {
   const reading = state.data
   const interpretation = user ? reading?.interpretation : null
   const returnTo = readingResultPath(id)
+  useEffect(() => {
+    if (result && initialReading) fromReveal.current = true
+    if (!result) { fromReveal.current = false; scrolledToInterpretation.current = false }
+  }, [result, initialReading])
   const expected = reading?.spread?.card_count
   const validCards = [3, 5, 10].includes(expected)
     && Array.isArray(reading?.cards)
@@ -415,6 +426,7 @@ function ReadingPage({ result = false }) {
     && new Set(reading.cards.map(item => item.position_number)).size === expected
     && new Set(reading.cards.filter(item => item.revealed).map(item => item.card.id)).size === reading.cards.filter(item => item.revealed).length
   const cards = validCards ? [...reading.cards].sort((a, b) => a.position_number - b.position_number) : []
+  const waitingForInterpretation = result && user && !state.error && !interpretation && (state.loading || busy || (validCards && cards.every(item => item.revealed) && !interpretError))
   async function reveal(position) {
     if (revealing !== null) return
     setRevealing(position)
@@ -439,7 +451,8 @@ function ReadingPage({ result = false }) {
       }
       await interpretReading(id)
       forgetGuestReading(id)
-      state.retry()
+      const updated = await getReading(id)
+      state.updateData(() => updated)
     } catch (error) {
       if (error.response?.status === 401) {
         setIdentity(null)
@@ -447,12 +460,12 @@ function ReadingPage({ result = false }) {
       }
       try {
         const current = await getReading(id)
-        if (current.interpretation) { state.retry(); return }
+        if (current.interpretation) { state.updateData(() => current); return }
         if (current.status === 'INTERPRETING') {
           for (let attempt = 0; attempt < 45; attempt += 1) {
             await new Promise(resolve => setTimeout(resolve, 2000))
             const updated = await getReading(id)
-            if (updated.interpretation) { state.retry(); return }
+            if (updated.interpretation) { state.updateData(() => updated); return }
             if (updated.status !== 'INTERPRETING') break
           }
         }
@@ -474,8 +487,18 @@ function ReadingPage({ result = false }) {
       void interpret()
     }
   }, [user, result, id, state.loading, state.error, validCards, interpretation, reading?.cards])
+  useEffect(() => {
+    if (!fromReveal.current || scrolledToInterpretation.current || state.loading || state.error || !validCards || !cards.every(item => item.revealed)) return
+    if (user && !interpretation && !interpretError) return
+    const target = interpretationRef.current
+    if (!target) return
+    scrolledToInterpretation.current = true
+    target.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' })
+    target.focus({ preventScroll: true })
+  }, [state.loading, state.error, validCards, interpretation, interpretError, user, reduced])
   return <Page kicker={result ? '08 / YOUR READING' : '07 / REVEAL'} title={result ? 'คำทำนายของคุณ' : 'เปิดไพ่ของคุณ'} lead={result ? 'ทบทวนความหมายในแต่ละตำแหน่งและคำแนะนำ' : 'เลือกไพ่แต่ละใบเพื่อเปิดดูผลที่บันทึกไว้'} back="/categories">
-    {state.loading ? <div className="empty-state" role="status">กำลังโหลดผลการเปิดไพ่…</div> : state.error ? <div className="empty-state" role="alert"><h2>ยังโหลดผลการเปิดไพ่ไม่ได้</h2><p>โปรดตรวจสอบการเชื่อมต่อและสิทธิ์เข้าถึง แล้วลองอีกครั้ง</p><button className="button button-outline" onClick={state.retry}>ลองอีกครั้ง <RefreshCw size={16} /></button></div> : !validCards ? <div className="empty-state" role="alert"><CircleHelp className="empty-inline-icon" size={26} aria-hidden="true" /><h2>ยังแสดงผลไพ่ไม่ได้</h2><p>ข้อมูลที่ระบบส่งมายังไม่มีรายละเอียดไพ่และตำแหน่งในรูปแบบที่รองรับ</p><button className="button button-outline" onClick={state.retry}>ลองอีกครั้ง <RefreshCw size={16} /></button></div> : <>
+    {waitingForInterpretation && createPortal(<div className="reading-wait" role="status" aria-live="polite"><span className="reading-wait-icon" aria-hidden="true"><Sparkles size={19} /></span><div><strong>{state.loading ? 'กำลังเตรียมผลการเปิดไพ่' : 'กำลังเรียบเรียงคำทำนาย'}</strong><p>โปรดรอสักครู่ คุณสามารถดูไพ่ที่เปิดไว้ระหว่างรอได้</p></div></div>, document.body)}
+    {state.loading && !state.data ? <div className="empty-state" role="status">กำลังโหลดผลการเปิดไพ่…</div> : state.error ? <div className="empty-state" role="alert"><h2>ยังโหลดผลการเปิดไพ่ไม่ได้</h2><p>โปรดตรวจสอบการเชื่อมต่อและสิทธิ์เข้าถึง แล้วลองอีกครั้ง</p><button className="button button-outline" onClick={state.retry}>ลองอีกครั้ง <RefreshCw size={16} /></button></div> : !validCards ? <div className="empty-state" role="alert"><CircleHelp className="empty-inline-icon" size={26} aria-hidden="true" /><h2>ยังแสดงผลไพ่ไม่ได้</h2><p>ข้อมูลที่ระบบส่งมายังไม่มีรายละเอียดไพ่และตำแหน่งในรูปแบบที่รองรับ</p><button className="button button-outline" onClick={state.retry}>ลองอีกครั้ง <RefreshCw size={16} /></button></div> : <>
       <div className="reading-summary"><p><strong>คำถาม:</strong> {reading.question?.prompt_th || reading.question_text || 'ไม่มีข้อมูลคำถาม'}</p><p><strong>รูปแบบ:</strong> {reading.spread?.name_th || 'ไม่มีข้อมูลรูปแบบไพ่'}</p>{result && cards.every(item => item.revealed) && <a className="account-link" href="#interpretation">ข้ามไปอ่านคำทำนาย <ArrowRight size={16} aria-hidden="true" /></a>}</div>
       {!result && <div className="reveal-progress" aria-live="polite"><span>เปิดไพ่แล้ว</span><strong>{cards.filter(item => item.revealed).length} <span>/ {cards.length} ใบ</span></strong></div>}
       <div className="revealed-grid">{cards.map(item => {
@@ -490,15 +513,15 @@ function ReadingPage({ result = false }) {
         </article>
       })}</div>
       {revealError && <p className="error-message" role="alert">เปิดไพ่ไม่สำเร็จ กรุณาลองอีกครั้ง</p>}
-      {result && cards.every(item => item.revealed) ? <div id="interpretation" className="interpretation">
+      {result && cards.every(item => item.revealed) ? <div id="interpretation" ref={interpretationRef} tabIndex={-1} className="interpretation">
         {!user ? <>
           <p>เข้าสู่ระบบหรือสมัครสมาชิกเพื่ออ่านคำทำนายจากไพ่ชุดนี้</p>
           {returnTo && <div className="account-actions">
             <Link className="button button-gold" to={authPath('/login', returnTo)}>เข้าสู่ระบบ</Link>
             <Link className="button button-outline" to={authPath('/register', returnTo)}>สมัครสมาชิก</Link>
           </div>}
-        </> : <>{interpretation && reading.interpretation_source === "database" && <p className="small-note">คำอ่านเบื้องต้นจากความหมายไพ่ในระบบ อาจยังตอบคำถามเฉพาะเจาะจงได้ไม่ครบถ้วน</p>}{interpretation?.overall_summary && <details open><summary>{reading.interpretation_source === 'database' ? 'คำตอบเบื้องต้น' : 'ภาพรวมคำทำนาย'}</summary><InterpretationParagraphs text={interpretation.overall_summary} /></details>}{interpretation?.practical_guidance?.length && <details open><summary>คำแนะนำที่นำไปใช้ได้</summary><ul>{interpretation.practical_guidance.map((guidance, index) => <li key={index}>{guidance}</li>)}</ul></details>}{interpretation?.card_connections && <details open><summary>{reading.interpretation_source === 'database' ? 'แนวทางอ่านไพ่ชุดนี้ประกอบกัน' : 'บทสรุปจากไพ่ทั้งหมด'}</summary><InterpretationParagraphs text={interpretation.card_connections} /></details>}{!interpretation && <><p role={busy ? "status" : undefined} aria-live="polite">{busy ? 'กำลังอ่านไพ่และเรียบเรียงคำทำนาย โปรดรอสักครู่…' : 'ยังไม่มีคำทำนายสำหรับการเปิดไพ่ครั้งนี้'}</p><button className="button button-outline" disabled={busy} onClick={interpret}>{busy ? 'กำลังขอคำทำนาย…' : 'ลองขอคำทำนายอีกครั้ง'}</button>{interpretError && <p className="error-message" role="alert">ยังไม่สามารถขอคำทำนายได้ กรุณาลองอีกครั้ง</p>}</>}</>}
-      </div> : result ? <Link className="button button-gold next-action" to={`/reveal/${encodeURIComponent(id)}`}>เปิดไพ่ที่เหลือ <ArrowRight size={16} /></Link> : cards.every(item => item.revealed) ? <Link className="button button-gold next-action" to={`/result/${encodeURIComponent(id)}`}>ดูคำทำนาย <ArrowRight size={16} /></Link> : null}
+        </> : <>{interpretation && reading.interpretation_source === "database" && <p className="small-note">คำอ่านเบื้องต้นจากความหมายไพ่ในระบบ อาจยังตอบคำถามเฉพาะเจาะจงได้ไม่ครบถ้วน</p>}{interpretation?.overall_summary && <details open><summary>{reading.interpretation_source === 'database' ? 'คำตอบเบื้องต้น' : 'ภาพรวมคำทำนาย'}</summary><InterpretationParagraphs text={interpretation.overall_summary} /></details>}{interpretation?.practical_guidance?.length && <details open><summary>คำแนะนำที่นำไปใช้ได้</summary><ul>{interpretation.practical_guidance.map((guidance, index) => <li key={index}>{guidance}</li>)}</ul></details>}{interpretation?.card_connections && <details open><summary>{reading.interpretation_source === 'database' ? 'แนวทางอ่านไพ่ชุดนี้ประกอบกัน' : 'บทสรุปจากไพ่ทั้งหมด'}</summary><InterpretationParagraphs text={interpretation.card_connections} /></details>}{!interpretation && !waitingForInterpretation && <><p>ยังไม่มีคำทำนายสำหรับการเปิดไพ่ครั้งนี้</p><button className="button button-outline" onClick={interpret}>ลองขอคำทำนายอีกครั้ง</button>{interpretError && <p className="error-message" role="alert">ยังไม่สามารถขอคำทำนายได้ กรุณาลองอีกครั้ง</p>}</>}</>}
+      </div> : result ? <Link className="button button-gold next-action" to={`/reveal/${encodeURIComponent(id)}`}>เปิดไพ่ที่เหลือ <ArrowRight size={16} /></Link> : cards.every(item => item.revealed) ? <Link className="button button-gold next-action" to={`/result/${encodeURIComponent(id)}`} state={{ reading, identity: user?.id ?? null }}>ดูคำทำนาย <ArrowRight size={16} /></Link> : null}
     </>}
   </Page>
 }
@@ -620,6 +643,7 @@ function Privacy() { return <Page kicker="PRIVACY" title="ข้อมูลส�
 function App() {
   const [draft, setDraft] = useState(() => readSession(DRAFT_KEY, {})); const [auth, setAuth] = useState({ loading: true, user: null, error: false }); const [authAttempt, setAuthAttempt] = useState(0)
   const location = useLocation(); const reduced = useReducedMotion()
+  const readingTransition = location.pathname.match(/^\/(?:reveal|result)\/([^/]+)$/)
   const lastTrackedNavigation = useRef(null)
   function setIdentity(user) {
     const identity = user ? String(user.id) : 'guest'
@@ -637,6 +661,6 @@ function App() {
     if (route && typeof globalThis.crypto?.randomUUID === 'function') recordPageView(globalThis.crypto.randomUUID(), route).catch(() => {})
   }, [location.key, location.pathname, auth.loading, auth.error])
   if (auth.loading || auth.error) return <main className="container"><div className="empty-state" role={auth.error ? 'alert' : 'status'}>{auth.error ? <><p>ตรวจสอบบัญชีไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่อ</p><button className="button button-outline" onClick={() => { setAuth({ loading: true, user: null, error: false }); setAuthAttempt(n => n + 1) }}>ลองอีกครั้ง</button></> : 'กำลังตรวจสอบบัญชี…'}</div></main>
-  return <Auth.Provider value={{user: auth.user, setIdentity}}><Draft.Provider value={{draft, setDraft}}><a className="skip-link" href="#main">ข้ามไปยังเนื้อหา</a><Header /><main id="main" tabIndex="-1"><AnimatePresence mode="wait"><motion.div key={location.pathname} initial={reduced ? false : {opacity: 0, y: 6}} animate={{opacity: 1, y: 0}} exit={reduced ? {} : {opacity: 0}} transition={{duration: .18}}><Routes location={location}><Route path="/" element={<Home />} /><Route path="/categories" element={<Categories />} /><Route path="/questions" element={<Questions />} /><Route path="/spreads" element={<Spreads />} /><Route path="/shuffle" element={<DeckSelection />} /><Route path="/pick" element={<Navigate to="/shuffle" replace />} /><Route path="/reveal/:id" element={<ReadingPage />} /><Route path="/result/:id" element={<ReadingPage result />} /><Route path="/history" element={<History />} /><Route path="/login" element={<AuthForm key="login" mode="login" />} /><Route path="/register" element={<AuthForm key="register" mode="register" />} /><Route path="/account" element={<Account />} /><Route path="/admin/analytics" element={<Analytics />} /><Route path="/privacy" element={<Privacy />} /><Route path="*" element={<Page kicker="PAGE NOT FOUND" title="ไม่พบหน้าที่คุณกำลังมองหา"><Link className="button button-outline" to="/">กลับหน้าแรก</Link></Page>} /></Routes></motion.div></AnimatePresence></main><Footer /></Draft.Provider></Auth.Provider>
+  return <Auth.Provider value={{user: auth.user, setIdentity}}><Draft.Provider value={{draft, setDraft}}><a className="skip-link" href="#main">ข้ามไปยังเนื้อหา</a><Header /><main id="main" tabIndex="-1"><AnimatePresence mode="wait"><motion.div key={readingTransition ? `reading:${readingTransition[1]}` : location.pathname} initial={reduced ? false : {opacity: 0, y: 6}} animate={{opacity: 1, y: 0}} exit={reduced ? {} : {opacity: 0}} transition={{duration: .18}}><Routes location={location}><Route path="/" element={<Home />} /><Route path="/categories" element={<Categories />} /><Route path="/questions" element={<Questions />} /><Route path="/spreads" element={<Spreads />} /><Route path="/shuffle" element={<DeckSelection />} /><Route path="/pick" element={<Navigate to="/shuffle" replace />} /><Route path="/reveal/:id" element={<ReadingPage />} /><Route path="/result/:id" element={<ReadingPage result />} /><Route path="/history" element={<History />} /><Route path="/login" element={<AuthForm key="login" mode="login" />} /><Route path="/register" element={<AuthForm key="register" mode="register" />} /><Route path="/account" element={<Account />} /><Route path="/admin/analytics" element={<Analytics />} /><Route path="/privacy" element={<Privacy />} /><Route path="*" element={<Page kicker="PAGE NOT FOUND" title="ไม่พบหน้าที่คุณกำลังมองหา"><Link className="button button-outline" to="/">กลับหน้าแรก</Link></Page>} /></Routes></motion.div></AnimatePresence></main><Footer /></Draft.Provider></Auth.Provider>
 }
 createRoot(document.getElementById('root')).render(<React.StrictMode><BrowserRouter><App /></BrowserRouter></React.StrictMode>)

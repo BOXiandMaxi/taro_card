@@ -70,6 +70,10 @@ button{font:inherit;cursor:pointer}button:focus-visible,summary:focus-visible{ou
 .pick-actions-count{display:none}
 .reading-summary .account-link{margin-top:8px;min-height:44px}
 .interpretation{scroll-margin-top:16px}
+.reading-wait{position:fixed;z-index:20;bottom:max(18px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:min(440px,calc(100% - 32px));display:flex;align-items:flex-start;gap:14px;padding:16px 18px;border:1px solid #d4c29c;border-radius:14px;background:#fffefa;color:#28243b;box-shadow:0 8px 28px #1b20352b}
+.reading-wait-icon{display:grid;place-items:center;flex:none;width:36px;height:36px;border-radius:50%;background:#f4eedf;color:#80672f}
+.reading-wait strong{display:block;font-size:15px;line-height:1.5}.reading-wait p{margin:3px 0 0;font-size:13px;line-height:1.6;color:#615e6c}
+.interpretation:focus{outline:none}
 @media(max-width:700px){
   .header-inner nav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;overflow:visible}
   .nav-link{text-align:center;white-space:normal;padding:12px 2px;line-height:1.35}
